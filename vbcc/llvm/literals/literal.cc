@@ -28,6 +28,7 @@ namespace vbcc
         std::string& error)
       {
         assert(literal == None);
+        (void)literal;
 
         if (type != None)
         {

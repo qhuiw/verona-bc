@@ -64,7 +64,7 @@ namespace vbcc
       }
 
       std::string error;
-#if LLVM_VERSION_MAJOR >= 22
+#if LLVM_VERSION_MAJOR >= 21
       const auto* target =
         llvm::TargetRegistry::lookupTarget(target_triple, error);
 #else
@@ -80,9 +80,15 @@ namespace vbcc
       }
 
       llvm::TargetOptions options;
+#if LLVM_VERSION_MAJOR >= 21
       auto target_machine =
         std::unique_ptr<llvm::TargetMachine>(target->createTargetMachine(
           target_triple, "generic", "", options, std::nullopt));
+#else
+      auto target_machine =
+        std::unique_ptr<llvm::TargetMachine>(target->createTargetMachine(
+          target_triple.str(), "generic", "", options, std::nullopt));
+#endif
 
       if (!target_machine)
       {
@@ -91,7 +97,7 @@ namespace vbcc
         return false;
       }
 
-#if LLVM_VERSION_MAJOR >= 22
+#if LLVM_VERSION_MAJOR >= 21
       module.setTargetTriple(target_triple);
 #else
       module.setTargetTriple(target_triple.str());
