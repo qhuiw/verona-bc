@@ -8,7 +8,7 @@ namespace vbcc
   namespace llvm_backend
   {
     std::optional<LoweredType>
-    lower_array_type(llvm::LLVMContext& context, const Node& type)
+    lower_array(llvm::LLVMContext& context, const Node& type)
     {
       assert(type == Array);
       auto* pointer_type = llvm::PointerType::getUnqual(context);

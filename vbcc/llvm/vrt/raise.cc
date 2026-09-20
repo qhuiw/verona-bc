@@ -69,11 +69,12 @@ namespace vbcc
       if (return_type.ir_type == IRValueType::None)
         builder.CreateRetVoid();
       else
-
         builder.CreateRet(result);
+
       return true;
     }
 
+    // Encode a typed value in the runtime's 64-bit raised-value transport.
     std::optional<llvm::Value*> LLVMCodegen::pack_raised_value(
       const Node& statement, const LoweredValue& value)
     {
@@ -117,6 +118,7 @@ namespace vbcc
       return {};
     }
 
+    // Decode the runtime's raised-value transport into a function return type.
     llvm::Value* LLVMCodegen::unpack_raised_value(
       const LoweredType& type, llvm::Value* value)
     {

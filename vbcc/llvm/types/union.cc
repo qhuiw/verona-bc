@@ -4,7 +4,7 @@ namespace vbcc
 {
   namespace llvm_backend
   {
-    std::optional<LoweredType> LLVMCodegen::lower_union_type(const Node& type)
+    std::optional<LoweredType> LLVMCodegen::lower_union(const Node& type)
     {
       std::optional<LoweredType> representation;
 

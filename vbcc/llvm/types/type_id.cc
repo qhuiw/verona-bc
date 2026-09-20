@@ -4,7 +4,7 @@ namespace vbcc
 {
   namespace llvm_backend
   {
-    std::optional<LoweredType> LLVMCodegen::lower_type_id_type(const Node& type)
+    std::optional<LoweredType> LLVMCodegen::lower_type_id(const Node& type)
     {
       for (const auto& alias : state.typealiases)
       {

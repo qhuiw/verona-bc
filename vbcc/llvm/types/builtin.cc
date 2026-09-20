@@ -10,13 +10,13 @@ namespace vbcc
     lower_primitive_type(llvm::LLVMContext& context, const Node& type);
 
     std::optional<LoweredType>
-    lower_array_type(llvm::LLVMContext& context, const Node& type);
+    lower_array(llvm::LLVMContext& context, const Node& type);
 
     std::optional<LoweredType>
-    lower_ref_type(llvm::LLVMContext& context, const Node& type);
+    lower_ref(llvm::LLVMContext& context, const Node& type);
 
     std::optional<LoweredType>
-    lower_cown_type(llvm::LLVMContext& context, const Node& type);
+    lower_cown(llvm::LLVMContext& context, const Node& type);
 
     // wfBuiltinType dispatch
     std::optional<LoweredType>
@@ -48,13 +48,13 @@ namespace vbcc
         return lower_primitive_type(context, type);
 
       if (type == Array)
-        return lower_array_type(context, type);
+        return lower_array(context, type);
 
       if (type == Ref)
-        return lower_ref_type(context, type);
+        return lower_ref(context, type);
 
       assert(type == Cown);
-      return lower_cown_type(context, type);
+      return lower_cown(context, type);
     }
   }
 }

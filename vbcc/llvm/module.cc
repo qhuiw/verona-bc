@@ -107,8 +107,8 @@ namespace vbcc
 
     bool LLVMCodegen::define_metadata()
     {
-      // Emit metadata required while lowering function bodies. Program-wide
-      // metadata is emitted after function lowering.
+      // Emit the function and class metadata required while lowering function
+      // bodies. Program-wide metadata is emitted after function lowering.
       //
       // Memo globals also belong here so MemoSlot can refer to them while
       // define_functions() emits function bodies. emit_initializers() will
@@ -120,7 +120,7 @@ namespace vbcc
     {
       for (const auto& func_state : state.functions)
       {
-        if (func_state.func && !emit_function(func_state.func))
+        if (func_state.func && !emit_func(func_state.func))
           return false;
       }
 

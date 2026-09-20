@@ -112,7 +112,7 @@ namespace vbcc
         allocation_function,
         prefix_arguments,
         strip_sigil(node_text(statement / LocalId)));
-      auto result_type = lower_class_id_type(class_id);
+      auto result_type = lower_class_id(class_id);
 
       if (!result_type)
         return false;

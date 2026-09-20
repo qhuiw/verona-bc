@@ -9,8 +9,8 @@ namespace vbcc
 {
   namespace llvm_backend
   {
-    /* emit function body */
-    bool LLVMCodegen::emit_function(const Node& func)
+    // Func and FuncOnce emitter.
+    bool LLVMCodegen::emit_func(const Node& func)
     {
       auto function_id = func / FunctionId;
       auto vars = func / Vars;

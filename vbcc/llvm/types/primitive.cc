@@ -14,7 +14,7 @@ namespace vbcc
 
     namespace
     {
-      LoweredType lower_none_type(llvm::LLVMContext& context)
+      LoweredType lower_none(llvm::LLVMContext& context)
       {
         return LoweredType{
           IRValueType::None,
@@ -23,14 +23,14 @@ namespace vbcc
           nullptr};
       }
 
-      LoweredType lower_bool_type(llvm::LLVMContext& context)
+      LoweredType lower_bool(llvm::LLVMContext& context)
       {
         auto* llvm_type = llvm::Type::getInt1Ty(context);
         return LoweredType{
           IRValueType::Bool, vrt::ValueType::scalar, llvm_type, llvm_type};
       }
 
-      LoweredType lower_pointer_type(llvm::LLVMContext& context)
+      LoweredType lower_ptr(llvm::LLVMContext& context)
       {
         auto* llvm_type = llvm::PointerType::getUnqual(context);
         return LoweredType{
@@ -65,10 +65,10 @@ namespace vbcc
          Ptr}));
 
       if (type == None)
-        return lower_none_type(context);
+        return lower_none(context);
 
       if (type == Bool)
-        return lower_bool_type(context);
+        return lower_bool(context);
 
       if (
         type->type().in(
@@ -79,7 +79,7 @@ namespace vbcc
         return lower_float_type(context, type);
 
       assert(type == Ptr);
-      return lower_pointer_type(context);
+      return lower_ptr(context);
     }
   }
 }

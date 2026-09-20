@@ -10,7 +10,7 @@ namespace vbcc
     lower_builtin_type(llvm::LLVMContext& context, const Node& type);
 
     std::optional<LoweredType>
-    lower_dyn_type(llvm::LLVMContext& context, const Node& type);
+    lower_dyn(llvm::LLVMContext& context, const Node& type);
 
     std::optional<LoweredType>
     lower_tuple_type(llvm::LLVMContext& context, const Node& type);
@@ -30,13 +30,13 @@ namespace vbcc
                            F32,  F64,  Ptr, Array, Ref,   Cown}))
         lowered = lower_builtin_type(context, type);
       else if (type == Dyn)
-        lowered = lower_dyn_type(context, type);
+        lowered = lower_dyn(context, type);
       else if (type == ClassId)
-        lowered = lower_class_id_type(type);
+        lowered = lower_class_id(type);
       else if (type == TypeId)
-        lowered = lower_type_id_type(type);
+        lowered = lower_type_id(type);
       else if (type == Union)
-        lowered = lower_union_type(type);
+        lowered = lower_union(type);
       else
       {
         assert(type == TupleType);

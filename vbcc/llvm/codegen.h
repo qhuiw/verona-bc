@@ -48,92 +48,95 @@ namespace vbcc
       bool emit(const std::filesystem::path& output);
 
     private:
+      // Utilities.
       static std::string node_text(const Node& node);
       static std::string strip_sigil(const std::string& name);
-
       void fail(const Node& node, const std::string& message);
 
-      std::optional<LoweredType> lower_type(const Node& type);
-      std::optional<LoweredType> lower_class_id_type(const Node& type);
-      std::optional<LoweredType> lower_type_id_type(const Node& type);
-      std::optional<LoweredType> lower_union_type(const Node& type);
-      std::optional<std::vector<LoweredType>> lower_params(const Node& params);
-
-      bool emit_retain(const Node& use, const LoweredValue& value);
-      bool emit_release(const Node& use, const LoweredValue& value);
-      std::optional<LookupPlan> resolve_lookup(const Node& statement);
-      std::optional<llvm::Value*> emit_callable_entry(
-        const Node& statement, const LoweredValue& callable);
-
-      // Module construction phases consume the normalized VIR tree and lookup
-      // indexes already built in Bytecode by assignids.
+      // Module build stages, in execution order.
       bool configure_target();
-      bool declare_class_types();
-      bool define_class_types();
-      bool declare_callables();
-      bool define_metadata();
-      bool define_functions();
-      bool emit_initializers();
-      bool verify_and_write(const std::filesystem::path& output);
 
+      bool declare_class_types();
+
+      bool define_class_types();
+
+      bool declare_callables();
       void declare_libraries();
-      bool emit_library_initializers();
       void declare_functions();
       bool declare_program_entry();
       bool declare_runtime_functions();
+
+      bool define_metadata();
       bool define_function_metadata();
       bool define_class_metadata();
-      bool define_program_metadata();
-      bool emit_program_entry();
-      bool
-      emit_enter_frame(const Node& statement, llvm::Value* function_descriptor);
-      bool
-      emit_reuse_frame(const Node& statement, llvm::Value* function_descriptor);
-      bool emit_leave_frame(const Node& statement);
-      bool emit_raise_continuation(
-        const Node& function,
-        llvm::BasicBlock* normal_entry,
-        const LoweredType& return_type);
-      std::optional<llvm::Value*>
-      pack_raised_value(const Node& statement, const LoweredValue& value);
-      llvm::Value*
-      unpack_raised_value(const LoweredType& type, llvm::Value* value);
 
-      bool emit_function(const Node& func);
+      bool define_functions();
+      bool emit_func(const Node& func);
+      bool emit_program_entry();
+
+      bool define_program_metadata();
+
+      bool emit_initializers();
+      bool emit_library_initializers();
+
+      bool verify_and_write(const std::filesystem::path& output);
+
+      // Lowerers.
+      std::optional<LoweredType> lower_type(const Node& type);
+      std::optional<LoweredType> lower_class_id(const Node& type);
+      std::optional<LoweredType> lower_type_id(const Node& type);
+      std::optional<LoweredType> lower_union(const Node& type);
+      std::optional<std::vector<LoweredType>> lower_params(const Node& params);
+      std::optional<llvm::Value*> lower_array_size(const Node& statement);
+
+      // Resolvers.
+      std::optional<std::size_t> runtime_type_id(const Node& type);
+      std::optional<LookupPlan> resolve_lookup(const Node& statement);
+
+      // wfStatement emitters, in token order.
       bool emit_statement(const Node& statement);
       bool emit_const(const Node& statement);
+      bool emit_convert(const Node& statement);
+      bool emit_new(const Node& statement);
+      bool emit_heap(const Node& statement);
+      bool emit_region(const Node& statement);
+      bool emit_new_array(const Node& statement);
+      bool emit_new_array_const(const Node& statement);
+      bool emit_heap_array(const Node& statement);
+      bool emit_region_array(const Node& statement);
+      bool emit_copy(const Node& statement);
+      bool emit_move(const Node& statement);
+      bool emit_drop(const Node& statement);
+      bool emit_lookup(const Node& statement);
+      bool emit_call(const Node& statement);
+      bool emit_call_dyn(const Node& statement);
+      bool emit_ffi(const Node& statement);
+      bool emit_binop(const Node& statement);
+      bool emit_unop(const Node& statement);
+      bool emit_add_external(const Node& statement);
+      bool emit_remove_external(const Node& statement);
+      bool emit_array_copy(const Node& statement);
+      bool emit_array_fill(const Node& statement);
+      bool emit_array_compare(const Node& statement);
+      bool emit_get_raise(const Node& statement);
+      bool emit_set_raise(const Node& statement);
       bool emit_const_e(const Node& statement);
       bool emit_const_pi(const Node& statement);
       bool emit_const_inf(const Node& statement);
       bool emit_const_nan(const Node& statement);
-      bool emit_add_external(const Node& statement);
-      bool emit_remove_external(const Node& statement);
-      bool emit_convert(const Node& statement);
-      bool emit_binop(const Node& statement);
-      bool emit_unop(const Node& statement);
-      bool emit_copy(const Node& statement);
-      bool emit_move(const Node& statement);
-      bool emit_get_raise(const Node& statement);
-      bool emit_set_raise(const Node& statement);
-      bool emit_call(const Node& statement);
-      bool emit_lookup(const Node& statement);
-      bool emit_call_dyn(const Node& statement);
-      bool emit_drop(const Node& statement);
-      bool emit_ffi(const Node& statement);
-      bool emit_new(const Node& statement);
-      bool emit_new_array(const Node& statement);
-      bool emit_new_array_const(const Node& statement);
-      bool emit_array_copy(const Node& statement);
-      bool emit_array_fill(const Node& statement);
-      bool emit_array_compare(const Node& statement);
-      bool emit_heap(const Node& statement);
-      bool emit_heap_array(const Node& statement);
-      bool emit_region(const Node& statement);
-      bool emit_region_array(const Node& statement);
-      bool emit_release_args(
-        const Node& args, const std::vector<LoweredValue>& values);
-      std::optional<std::size_t> runtime_type_id(const Node& type);
-      std::optional<llvm::Value*> lower_array_size(const Node& statement);
+
+      // wfTerminator emitters, in token order.
+      bool emit_terminator(
+        const Node& terminator, const LoweredType& return_type);
+      bool emit_tailcall(const Node& statement, const LoweredType& return_type);
+      bool emit_tailcall_dyn(
+        const Node& statement, const LoweredType& return_type);
+      bool emit_return(const Node& statement, const LoweredType& return_type);
+      bool emit_raise(const Node& statement);
+      bool emit_cond(const Node& statement);
+      bool emit_jump(const Node& statement);
+
+      // Allocation helpers.
       bool emit_array_allocation(
         const Node& statement,
         llvm::Function* allocation_function,
@@ -143,15 +146,34 @@ namespace vbcc
         llvm::Function* allocation_function,
         std::vector<llvm::Value*> prefix_arguments);
 
+      // Ownership helpers.
+      bool emit_retain(const Node& use, const LoweredValue& value);
+      bool emit_release(const Node& use, const LoweredValue& value);
+
+      // Argument helpers.
+      bool emit_release_args(
+        const Node& args, const std::vector<LoweredValue>& values);
+
+      // Callable helpers.
+      std::optional<llvm::Value*> emit_callable_entry(
+        const Node& statement, const LoweredValue& callable);
+
+      // Frame management.
       bool
-      emit_terminator(const Node& terminator, const LoweredType& return_type);
-      bool emit_tailcall(const Node& statement, const LoweredType& return_type);
-      bool
-      emit_tailcall_dyn(const Node& statement, const LoweredType& return_type);
-      bool emit_return(const Node& statement, const LoweredType& return_type);
-      bool emit_raise(const Node& statement);
-      bool emit_cond(const Node& statement);
-      bool emit_jump(const Node& statement);
+      emit_enter_frame(const Node& statement, llvm::Value* function_descriptor);
+      bool emit_reuse_frame(
+        const Node& statement, llvm::Value* function_descriptor);
+      bool emit_leave_frame(const Node& statement);
+
+      // Raise handling.
+      bool emit_raise_continuation(
+        const Node& function,
+        llvm::BasicBlock* normal_entry,
+        const LoweredType& return_type);
+      std::optional<llvm::Value*>
+      pack_raised_value(const Node& statement, const LoweredValue& value);
+      llvm::Value*
+      unpack_raised_value(const LoweredType& type, llvm::Value* value);
     };
   }
 }
