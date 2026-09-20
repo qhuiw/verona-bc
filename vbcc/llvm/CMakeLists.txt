@@ -4,6 +4,15 @@ add_library(libvbcllvm STATIC
   blocks.cc
   classes.cc
   codegen.cc
+  # Shared call lowering.
+  calls/callable.cc
+  # Call statements.
+  calls/call.cc
+  calls/call_dyn.cc
+  calls/lookup.cc
+  # Call terminators.
+  calls/tailcall.cc
+  calls/tailcall_dyn.cc
   functions/declaration.cc
   functions/descriptors.cc
   functions/emission.cc
@@ -23,35 +32,30 @@ add_library(libvbcllvm STATIC
   vrt/tailcall.cc
   statements.cc
   statements/args.cc
-  statements/array.cc
+  # Allocation statements.
+  statements/allocation/array.cc
+  statements/allocation/heap.cc
+  statements/allocation/heap_array.cc
+  statements/allocation/new.cc
+  statements/allocation/new_array.cc
+  statements/allocation/new_array_const.cc
+  statements/allocation/object.cc
+  statements/allocation/region.cc
+  statements/allocation/region_array.cc
   statements/binop.cc
-  statements/call.cc
-  statements/call_dyn.cc
   statements/constant.cc
   statements/convert.cc
   statements/copy.cc
-  statements/callable.cc
   statements/drop.cc
   statements/ffi.cc
-  statements/heap.cc
-  statements/heap_array.cc
-  statements/lookup.cc
   statements/move.cc
-  statements/new.cc
-  statements/new_array.cc
-  statements/new_array_const.cc
-  statements/object.cc
   statements/raise_target.cc
-  statements/region.cc
-  statements/region_array.cc
   statements/unop.cc
   terminators.cc
   terminators/cond.cc
   terminators/jump.cc
   terminators/raise.cc
   terminators/return.cc
-  terminators/tailcall.cc
-  terminators/tailcall_dyn.cc
   types.cc
   types/array.cc
   types/builtin.cc
