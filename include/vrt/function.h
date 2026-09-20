@@ -8,19 +8,19 @@
 namespace vrt
 {
   /** Type-erased native entry point for a generated Verona function. */
-  using FuncPtr = void (*)(void);
+  using FunctionEntry = void (*)(void);
 
   /** Static metadata describing a generated Verona function. */
-  struct Func
+  struct Function
   {
     uint64_t id;
     const char* name;
-    FuncPtr entry;
+    FunctionEntry entry;
   };
 }
 
-using vrt_func_ptr = vrt::FuncPtr;
-using vrt_func = vrt::Func;
+using vrt_func_ptr = vrt::FunctionEntry;
+using vrt_func = vrt::Function;
 #else
 /** Type-erased native entry point for a generated Verona function. */
 typedef void (*vrt_func_ptr)(void);
@@ -39,8 +39,13 @@ extern "C"
 {
 #endif
 
-  /** Return the native entry point carried by callable metadata. */
-  VRT_EXPORT vrt_func_ptr vrt_func_get_ptr(const vrt_func* func);
+  /**
+   * Return the native entry point carried by callable metadata.
+   *
+   * func and func->entry must be non-null. Invalid callable
+   * state terminates the process, matching an infallible dynamic call.
+   */
+  VRT_EXPORT vrt_func_ptr vrt_func_entry(const vrt_func* func);
 
 #if defined(__cplusplus)
 }

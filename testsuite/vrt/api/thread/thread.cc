@@ -5,8 +5,8 @@
 
 int main()
 {
-  const vrt::Func root_function{1, "root", nullptr};
-  const vrt::Func child_function{2, "child", nullptr};
+  const vrt::Function root_function{1, "root", nullptr};
+  const vrt::Function child_function{2, "child", nullptr};
 
   if (
     (vrt_thread_current() != nullptr) ||

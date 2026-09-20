@@ -32,11 +32,11 @@ namespace
   void singleton_first_method() {}
   void singleton_method() {}
   void singleton_last_method() {}
-  const vrt::Func singleton_first_function{
+  const vrt::Function singleton_first_function{
     0x300, "Singleton.first", &singleton_first_method};
-  const vrt::Func singleton_function{
+  const vrt::Function singleton_function{
     0x301, "Singleton.method", &singleton_method};
-  const vrt::Func singleton_last_function{
+  const vrt::Function singleton_last_function{
     0x302, "Singleton.last", &singleton_last_method};
   const vrt::Method singleton_methods[] = {
     {0x101, &singleton_first_function},
@@ -98,9 +98,9 @@ int main()
     (singleton_methods[1].func != &singleton_function))
     return 1;
 
-  const vrt::Func root_function{1, "root", nullptr};
-  const vrt::Func child_function{2, "child", nullptr};
-  const vrt::Func intermediate_function{3, "intermediate", nullptr};
+  const vrt::Function root_function{1, "root", nullptr};
+  const vrt::Function child_function{2, "child", nullptr};
+  const vrt::Function intermediate_function{3, "intermediate", nullptr};
   vrt_thread_init();
   auto* root_frame = vrt_frame_enter(&root_function);
   if ((root_frame == nullptr) || (root_frame->region == nullptr))

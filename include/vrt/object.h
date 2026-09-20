@@ -23,7 +23,7 @@ namespace vrt
   struct Method
   {
     uintptr_t id;
-    const Func* func;
+    const Function* func;
   };
 
   /**

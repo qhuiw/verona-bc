@@ -42,6 +42,12 @@ namespace vbcc
       if (statement == Call)
         return emit_call(statement);
 
+      if (statement == Lookup)
+        return emit_lookup(statement);
+
+      if (statement == CallDyn)
+        return emit_call_dyn(statement);
+
       if (statement == FFI)
         return emit_ffi(statement);
 

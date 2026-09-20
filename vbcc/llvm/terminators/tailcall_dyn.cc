@@ -12,7 +12,27 @@ namespace vbcc
     bool LLVMCodegen::emit_tailcall_dyn(
       const Node& statement, const LoweredType& return_type)
     {
+      auto target_id = statement / LocalId;
+      auto borrowed_target = locals.find_value(target_id);
+
+      if (
+        !borrowed_target ||
+        (borrowed_target->type.ir_type != IRValueType::Function) ||
+        !borrowed_target->signature)
+      {
+        fail(statement, "dynamic tailcall target is not callable");
+        return false;
+      }
+
+      const auto& borrowed_signature = *borrowed_target->signature;
       auto move_args = statement / MoveArgs;
+
+      if (move_args->size() != borrowed_signature.param_types.size())
+      {
+        fail(statement, "wrong number of LLVM dynamic tailcall arguments");
+        return false;
+      }
+
       std::vector<LoweredValue> args;
       args.reserve(move_args->size());
 
@@ -28,28 +48,36 @@ namespace vbcc
         args.push_back(*value);
       }
 
-      auto target_id = statement / LocalId;
       auto target = locals.move_value(statement, target_id);
 
       if (!target)
         return false;
 
       if (
-        (target->type.ir_type != IRValueType::Pointer) ||
-        (target->value == nullptr))
+        (target->type.ir_type != IRValueType::Function) ||
+        (target->value == nullptr) || !target->signature)
       {
-        fail(statement, "dynamic tailcall target representation is not ptr");
+        fail(statement, "dynamic tailcall target is not callable");
+        return false;
+      }
+
+      const auto& signature = *target->signature;
+
+      if (signature.return_type != return_type)
+      {
+        fail(statement, "dynamic tailcall return representation mismatch");
         return false;
       }
 
       std::vector<llvm::Type*> param_types;
       std::vector<llvm::Value*> llvm_args;
-      auto* pointer_type = llvm::PointerType::getUnqual(context);
       param_types.reserve(args.size());
       llvm_args.reserve(args.size());
 
-      for (const auto& arg : args)
+      for (std::size_t index = 0; index < args.size(); ++index)
       {
+        const auto& arg = args.at(index);
+
         if ((arg.type.ir_type == IRValueType::None) || (arg.value == nullptr))
         {
           fail(
@@ -58,18 +86,31 @@ namespace vbcc
           return false;
         }
 
+        if (arg.type != signature.param_types.at(index))
+        {
+          fail(
+            move_args->at(index),
+            "dynamic tailcall argument representation mismatch");
+          return false;
+        }
+
         param_types.push_back(arg.type.llvm_type);
         llvm_args.push_back(arg.value);
       }
 
-      auto* unknown_descriptor = llvm::ConstantPointerNull::get(pointer_type);
+      auto function_pointer =
+        emit_callable_entry(statement, *target);
 
-      if (!emit_reuse_frame(statement, unknown_descriptor))
+      if (!function_pointer)
         return false;
 
-      auto* function_type =
-        llvm::FunctionType::get(return_type.llvm_type, param_types, false);
-      auto* call = builder.CreateCall(function_type, target->value, llvm_args);
+      if (!emit_reuse_frame(statement, target->value))
+        return false;
+
+      auto* function_type = llvm::FunctionType::get(
+        signature.return_type.llvm_type, param_types, false);
+      auto* call =
+        builder.CreateCall(function_type, *function_pointer, llvm_args);
       call->setCallingConv(llvm::CallingConv::Tail);
       call->setTailCallKind(llvm::CallInst::TCK_MustTail);
 

@@ -2,7 +2,8 @@
 
 #include <vrt/function.h>
 
-extern "C" VRT_EXPORT vrt_func_ptr vrt_func_get_ptr(const vrt_func* func)
+extern "C" VRT_EXPORT vrt::FunctionEntry vrt_func_entry(
+  const vrt::Function* func)
 {
   internal_check(
     (func != nullptr) && (func->entry != nullptr),

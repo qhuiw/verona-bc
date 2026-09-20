@@ -102,8 +102,8 @@ int main()
     (holder_fields[0].value_type != vrt::ValueType::object))
     return 1;
 
-  const vrt::Func root_function{1, "root", nullptr};
-  const vrt::Func tail_function{2, "tail", nullptr};
+  const vrt::Function root_function{1, "root", nullptr};
+  const vrt::Function tail_function{2, "tail", nullptr};
   vrt_thread_init();
   auto* root_frame = vrt_frame_enter(&root_function);
   if (

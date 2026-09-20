@@ -4,10 +4,15 @@ namespace vbcc
 {
   namespace llvm_backend
   {
-    std::optional<LoweredType>
-    lower_type_id_type(llvm::LLVMContext&, const Node&)
+    std::optional<LoweredType> LLVMCodegen::lower_type_id_type(const Node& type)
     {
-      // Resolves a TypeId and lowers the type it names.
+      for (const auto& alias : state.typealiases)
+      {
+        if ((alias / TypeId)->location() == type->location())
+          return lower_type(alias / Type);
+      }
+
+      fail(type, "unknown type alias '" + node_text(type) + "'");
       return {};
     }
   }

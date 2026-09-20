@@ -35,7 +35,7 @@ namespace vrt
   struct ErrorInfo
   {
     Error code = Error::none;
-    const Func* func = nullptr;
+    const Function* func = nullptr;
     uintptr_t site = 0;
   };
 

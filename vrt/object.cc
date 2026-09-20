@@ -278,7 +278,7 @@ extern "C" VRT_EXPORT void* vrt_object_region(
   return region->object(cls)->init(argc, packed_args).get_payload();
 }
 
-extern "C" VRT_EXPORT const vrt::Func*
+extern "C" VRT_EXPORT const vrt::Function*
 vrt_object_lookup(const void* payload, uintptr_t method_id)
 {
   const auto* object = static_cast<vrt::Object*>(

@@ -106,6 +106,7 @@ namespace vbcc
         }
 
         case IRValueType::Pointer:
+        case IRValueType::Function:
           return builder.CreatePtrToInt(value.value, word_type, "raise.bits");
 
         case IRValueType::None:
@@ -137,6 +138,7 @@ namespace vbcc
         }
 
         case IRValueType::Pointer:
+        case IRValueType::Function:
           return builder.CreateIntToPtr(value, type.llvm_type, "raised.result");
 
         case IRValueType::None:

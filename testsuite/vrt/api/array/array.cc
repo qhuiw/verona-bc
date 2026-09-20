@@ -86,9 +86,9 @@ int main()
     (vrt::unarray(scalar_array_type_id) != scalar_type_id))
     return 1;
 
-  const vrt::Func root_function{1, "root", nullptr};
-  const vrt::Func child_function{2, "child", nullptr};
-  const vrt::Func intermediate_function{3, "intermediate", nullptr};
+  const vrt::Function root_function{1, "root", nullptr};
+  const vrt::Function child_function{2, "child", nullptr};
+  const vrt::Function intermediate_function{3, "intermediate", nullptr};
   vrt_thread_init();
   auto* root_frame = vrt_frame_enter(&root_function);
   if (

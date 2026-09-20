@@ -7,7 +7,7 @@
 #include <limits>
 #include <new>
 
-extern "C" VRT_EXPORT vrt_frame* vrt_frame_enter(const vrt_func* func)
+extern "C" VRT_EXPORT vrt_frame* vrt_frame_enter(const vrt::Function* func)
 {
   auto& context = vrt::ThreadContext::get();
   auto& thread = context.thread;
@@ -61,7 +61,7 @@ extern "C" VRT_EXPORT void vrt_frame_leave(void)
   context.unwind_frames(frame->parent);
 }
 
-extern "C" VRT_EXPORT void vrt_frame_reuse(const vrt_func* func)
+extern "C" VRT_EXPORT void vrt_frame_reuse(const vrt::Function* func)
 {
   auto& context = vrt::ThreadContext::get();
   auto& thread = context.thread;
@@ -150,7 +150,8 @@ extern "C" VRT_EXPORT uint64_t vrt_frame_id(const vrt_frame* frame)
   return frame->frame_id.raw();
 }
 
-extern "C" VRT_EXPORT const vrt_func* vrt_frame_func(const vrt_frame* frame)
+extern "C" VRT_EXPORT const vrt::Function* vrt_frame_func(
+  const vrt_frame* frame)
 {
   if (frame == nullptr)
     return nullptr;

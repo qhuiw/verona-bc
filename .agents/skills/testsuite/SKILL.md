@@ -146,7 +146,7 @@ then registers their execution as named nodes:
 The API fixtures are hand-written stand-ins for generated native code. They
 call the same exported functions as generated code and provide the subset of
 compiler-emitted metadata required by the API under test. Where needed, they
-construct `vrt::Func`, `vrt::Field`, `vrt::Method`, `vrt::Class`,
+construct `vrt::Function`, `vrt::Field`, `vrt::Method`, `vrt::Class`,
 `vrt::TypeInfo`, `vrt::Singleton`, and `vrt::Program` descriptors using the
 same ABI layouts and relationships emitted by the LLVM backend. Numeric IDs,
 payload structs, and sample values are deliberately small synthetic test

@@ -6,9 +6,9 @@
 
 int main()
 {
-  const vrt::Func root_function{1, "root", nullptr};
-  const vrt::Func child_function{2, "child", nullptr};
-  const vrt::Func tail_function{3, "tail", nullptr};
+  const vrt::Function root_function{1, "root", nullptr};
+  const vrt::Function child_function{2, "child", nullptr};
+  const vrt::Function tail_function{3, "tail", nullptr};
 
   if (
     (vrt_frame_parent(nullptr) != nullptr) || (vrt_frame_id(nullptr) != 0) ||

@@ -85,12 +85,16 @@ namespace vbcc
         "vrt_object_region",
         pointer_type,
         {i8_type, pointer_type, word_type, pointer_type});
+      runtime.object_lookup_method = declare(
+        "vrt_object_lookup", pointer_type, {pointer_type, word_type});
       runtime.object_retain =
         declare("vrt_object_retain", void_type, {pointer_type});
       runtime.object_release =
         declare("vrt_object_release", void_type, {pointer_type});
       runtime.object_escape =
         declare("vrt_object_escape", void_type, {pointer_type});
+      runtime.func_entry =
+        declare("vrt_func_entry", pointer_type, {pointer_type});
       runtime.setjmp = declare("setjmp", i32_type, {pointer_type});
 
       if (runtime.frame_raise != nullptr)

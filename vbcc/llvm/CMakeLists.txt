@@ -26,13 +26,16 @@ add_library(libvbcllvm STATIC
   statements/array.cc
   statements/binop.cc
   statements/call.cc
+  statements/call_dyn.cc
   statements/constant.cc
   statements/convert.cc
   statements/copy.cc
+  statements/callable.cc
   statements/drop.cc
   statements/ffi.cc
   statements/heap.cc
   statements/heap_array.cc
+  statements/lookup.cc
   statements/move.cc
   statements/new.cc
   statements/new_array.cc

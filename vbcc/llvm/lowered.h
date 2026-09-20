@@ -5,6 +5,7 @@
 #include <cstddef>
 #include <optional>
 #include <string>
+#include <utility>
 #include <vector>
 
 namespace llvm
@@ -28,6 +29,7 @@ namespace vbcc
       UnsignedInteger,
       Float,
       Pointer,
+      Function,
     };
 
     struct LoweredType
@@ -46,17 +48,32 @@ namespace vbcc
       bool operator==(const LoweredType&) const = default;
     };
 
+    struct LoweredSignature
+    {
+      LoweredType return_type;
+      std::vector<LoweredType> param_types;
+
+      bool operator==(const LoweredSignature&) const = default;
+    };
+
     struct LoweredValue
     {
       LoweredType type;
       llvm::Value* value = nullptr;
+      std::optional<LoweredSignature> signature;
+
+      LoweredValue(
+        LoweredType type,
+        llvm::Value* value,
+        std::optional<LoweredSignature> signature = {})
+      : type(type), value(value), signature(std::move(signature))
+      {}
     };
 
     struct LoweredFunction
     {
       llvm::Function* function;
-      LoweredType return_type;
-      std::vector<LoweredType> param_types;
+      LoweredSignature signature;
       llvm::GlobalVariable* descriptor = nullptr;
     };
 
@@ -96,6 +113,8 @@ namespace vbcc
       llvm::Function* object_retain = nullptr;
       llvm::Function* object_release = nullptr;
       llvm::Function* object_escape = nullptr;
+      llvm::Function* object_lookup_method = nullptr;
+      llvm::Function* func_entry = nullptr;
       llvm::Function* setjmp = nullptr;
     };
 

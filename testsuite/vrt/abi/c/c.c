@@ -54,8 +54,8 @@ static vrt_frame* (*const frame_parent_signature)(vrt_frame*) =
 static uint64_t (*const frame_id_signature)(const vrt_frame*) = vrt_frame_id;
 static const vrt_func* (*const frame_func_signature)(const vrt_frame*) =
   vrt_frame_func;
-static vrt_func_ptr (*const func_get_ptr_signature)(const vrt_func*) =
-  vrt_func_get_ptr;
+static vrt_func_ptr (*const func_entry_signature)(const vrt_func*) =
+  vrt_func_entry;
 static void* (*const array_new_signature)(uintptr_t, uintptr_t) = vrt_array_new;
 static void* (*const array_heap_signature)(
   const void*, uintptr_t, uintptr_t) = vrt_array_heap;
@@ -110,7 +110,7 @@ void verona_program_entry(void)
   (void)frame_parent_signature;
   (void)frame_id_signature;
   (void)frame_func_signature;
-  (void)func_get_ptr_signature;
+  (void)func_entry_signature;
   (void)array_new_signature;
   (void)array_heap_signature;
   (void)array_region_signature;

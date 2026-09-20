@@ -33,7 +33,7 @@ namespace vbcc
 
       auto& callee = function->second;
 
-      if (args->size() != callee.param_types.size())
+      if (args->size() != callee.signature.param_types.size())
       {
         fail(statement, "wrong number of LLVM call arguments");
         return false;
@@ -60,7 +60,7 @@ namespace vbcc
       {
         auto& value = lowered_args->at(i);
 
-        if (value.type != callee.param_types.at(i))
+        if (value.type != callee.signature.param_types.at(i))
         {
           fail(arg, "call argument representation mismatch");
           return false;
@@ -76,7 +76,8 @@ namespace vbcc
         ++i;
       }
 
-      auto result_name = callee.return_type.ir_type == IRValueType::None ?
+      auto result_name =
+        callee.signature.return_type.ir_type == IRValueType::None ?
         std::string() :
         strip_sigil(node_text(dst));
 
@@ -86,14 +87,16 @@ namespace vbcc
       auto* call = builder.CreateCall(callee.function, llvm_args, result_name);
       call->setCallingConv(callee.function->getCallingConv());
 
-      if (callee.return_type.ir_type == IRValueType::None)
+      if (callee.signature.return_type.ir_type == IRValueType::None)
       {
         return locals.bind_value(
-          statement, dst, LoweredValue{callee.return_type, nullptr});
+          statement,
+          dst,
+          LoweredValue{callee.signature.return_type, nullptr});
       }
 
       return locals.bind_value(
-        statement, dst, LoweredValue{callee.return_type, call});
+        statement, dst, LoweredValue{callee.signature.return_type, call});
     }
   }
 }

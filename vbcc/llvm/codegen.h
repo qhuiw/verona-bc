@@ -55,10 +55,16 @@ namespace vbcc
 
       std::optional<LoweredType> lower_type(const Node& type);
       std::optional<LoweredType> lower_class_id_type(const Node& type);
+      std::optional<LoweredType> lower_type_id_type(const Node& type);
+      std::optional<LoweredType> lower_union_type(const Node& type);
       std::optional<std::vector<LoweredType>> lower_params(const Node& params);
 
       bool emit_retain(const Node& use, const LoweredValue& value);
       bool emit_release(const Node& use, const LoweredValue& value);
+      std::optional<LoweredSignature>
+      resolve_lookup_sig(const Node& statement);
+      std::optional<llvm::Value*> emit_callable_entry(
+        const Node& statement, const LoweredValue& callable);
 
       // Module construction phases consume the normalized VIR tree and lookup
       // indexes already built in Bytecode by assignids.
@@ -105,6 +111,8 @@ namespace vbcc
       bool emit_get_raise(const Node& statement);
       bool emit_set_raise(const Node& statement);
       bool emit_call(const Node& statement);
+      bool emit_lookup(const Node& statement);
+      bool emit_call_dyn(const Node& statement);
       bool emit_drop(const Node& statement);
       bool emit_ffi(const Node& statement);
       bool emit_new(const Node& statement);

@@ -57,7 +57,8 @@ namespace vbcc
         if (!locals.bind_value(
               param,
               param_id,
-              LoweredValue{lowered.param_types.at(param_index++), &*argument}))
+              LoweredValue{
+                lowered.signature.param_types.at(param_index++), &*argument}))
           return false;
 
         ++argument;
@@ -76,7 +77,7 @@ namespace vbcc
       if (!emit_raise_continuation(
             func,
             blocks.get(labels->front() / LabelId),
-            lowered.return_type))
+        lowered.signature.return_type))
         return false;
 
       for (const auto& label : *labels)
@@ -91,7 +92,7 @@ namespace vbcc
             return false;
         }
 
-        if (!emit_terminator(label / Return, lowered.return_type))
+        if (!emit_terminator(label / Return, lowered.signature.return_type))
           return false;
       }
 

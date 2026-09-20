@@ -426,6 +426,22 @@ operation, and emits a direct LLVM call with the callee's Verona calling
 convention. The call site pushes the callee's logical frame after transferring
 the arguments; the callee's return epilogue pops it.
 
+A VIR `lookup` asks `vrt_object_lookup` for the callable descriptor associated
+with the receiver's class and `MethodId`. Each generated class has an immutable
+method table sorted by `MethodId`; the runtime uses binary search. The
+resulting non-owning callable is represented as an LLVM pointer, but the
+compiler tracks it as `IRValueType::Function` and attaches its exact lowered
+parameter and result signature.
+
+`calldyn` validates that signature, obtains the type-erased code pointer with
+`vrt_func_entry`, enters a frame using the selected callable descriptor, and
+emits an indirect `tailcc` call. `tailcalldyn` uses the same lookup and
+validation path, but reuses the current logical frame and emits an indirect
+LLVM `musttail` call. A homogeneous VIR union or type alias can be a dynamic
+receiver when every member lowers to exactly the same LLVM representation;
+object-class unions therefore retain their dynamic lookup in the native
+backend.
+
 Each generated function also saves a native `setjmp` continuation in its
 logical frame. A VIR `raise` consumes its source value, encodes the currently
 supported native representation in a 64-bit runtime word, and passes its
@@ -449,9 +465,9 @@ define the semantic slow path that generated call sites and epilogues can later
 replace with inline fast paths while retaining runtime fallbacks.
 
 Before the LLVM `musttail` call, the backend transfers each `MoveArg` and calls
-`vrt_frame_reuse`. Static calls record generated function metadata; the current
-raw-pointer dynamic representation has no descriptor and therefore records a
-null function identity until dynamic callables carry both code and metadata.
+`vrt_frame_reuse`. Static targets use their generated function descriptor;
+dynamic targets use the callable descriptor selected by `lookup`, preserving
+the same frame metadata for both forms.
 The liveness pass expresses non-transferred register cleanup as explicit `Drop`
 statements before the terminator.
 
@@ -482,13 +498,16 @@ region.
 > nominal class layouts and metadata,
 > multi-block conditional control flow, scalar operations, copy/move/drop,
 > static calls, process-local non-variadic FFI calls, returns,
-> scalar/raw-pointer `raise` payloads, and static tailcalls. Dynamic tailcalls
-> are supported when the target has the current raw `ptr` representation.
+> scalar/raw-pointer `raise` payloads, and static tailcalls.
+> Object method lookup, dynamic calls, and dynamic tailcalls are supported
+> when lookup can determine one compatible callable signature; homogeneous
+> type aliases and unions are supported as receivers.
 > Verona functions use LLVM `tailcc`; the exported C-compatible
 > `verona_program_entry` wrapper enters the internal Verona calling convention.
-> Managed runtime representations, dynamic calls, fallible dynamic calls, and
-> dynamic lookup are not yet lowered, so source-level block-lambda raise is not
-> yet available end to end through the native backend. Unsupported operations,
+> Managed runtime representations, unrestricted `dyn` values, fallible dynamic
+> calls, and `when` dynamic calls are not yet lowered, so source-level
+> block-lambda raise is not yet available end to end through the native backend.
+> Unsupported operations,
 > library forms, symbol versions, and variadic calls produce an LLVM-backend
 > diagnostic. A build configured without `VERONA_ENABLE_LLVM_BACKEND` similarly
 > rejects `--emit llvm-ir`.

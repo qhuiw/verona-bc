@@ -9,8 +9,8 @@
 #include <vrt/region.h>
 #include <vrt/thread.h>
 
-static_assert(std::is_same_v<vrt_func, vrt::Func>);
-static_assert(std::is_same_v<vrt_func_ptr, vrt::FuncPtr>);
+static_assert(std::is_same_v<vrt_func, vrt::Function>);
+static_assert(std::is_same_v<vrt_func_ptr, vrt::FunctionEntry>);
 static_assert(std::is_same_v<vrt_field, vrt::Field>);
 static_assert(std::is_same_v<vrt_method, vrt::Method>);
 static_assert(std::is_same_v<vrt_class, vrt::Class>);
@@ -74,7 +74,7 @@ static_assert(std::is_same_v<
               decltype(&vrt_frame_func),
               const vrt_func* (*)(const vrt_frame*)>);
 static_assert(std::is_same_v<
-              decltype(&vrt_func_get_ptr),
+              decltype(&vrt_func_entry),
               vrt_func_ptr (*)(const vrt_func*)>);
 static_assert(std::is_same_v<
               decltype(&vrt_array_new),

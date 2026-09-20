@@ -26,13 +26,13 @@ namespace vbcc
       auto& callee = function->second;
       auto move_args = statement / MoveArgs;
 
-      if (callee.return_type != return_type)
+      if (callee.signature.return_type != return_type)
       {
         fail(statement, "tailcall return representation mismatch");
         return false;
       }
 
-      if (move_args->size() != callee.param_types.size())
+      if (move_args->size() != callee.signature.param_types.size())
       {
         fail(statement, "wrong number of LLVM tailcall arguments");
         return false;
@@ -66,7 +66,7 @@ namespace vbcc
           return false;
         }
 
-        if (arg.type != callee.param_types.at(i))
+        if (arg.type != callee.signature.param_types.at(i))
         {
           fail(move_args, "tailcall argument representation mismatch");
           return false;

@@ -13,12 +13,6 @@ namespace vbcc
     lower_dyn_type(llvm::LLVMContext& context, const Node& type);
 
     std::optional<LoweredType>
-    lower_type_id_type(llvm::LLVMContext& context, const Node& type);
-
-    std::optional<LoweredType>
-    lower_union_type(llvm::LLVMContext& context, const Node& type);
-
-    std::optional<LoweredType>
     lower_tuple_type(llvm::LLVMContext& context, const Node& type);
 
     // wfType dispatch
@@ -40,9 +34,9 @@ namespace vbcc
       else if (type == ClassId)
         lowered = lower_class_id_type(type);
       else if (type == TypeId)
-        lowered = lower_type_id_type(context, type);
+        lowered = lower_type_id_type(type);
       else if (type == Union)
-        lowered = lower_union_type(context, type);
+        lowered = lower_union_type(type);
       else
       {
         assert(type == TupleType);
