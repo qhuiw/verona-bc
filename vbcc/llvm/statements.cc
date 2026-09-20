@@ -12,6 +12,24 @@ namespace vbcc
       if (statement == Const)
         return emit_const(statement);
 
+      if (statement == Const_E)
+        return emit_const_e(statement);
+
+      if (statement == Const_Pi)
+        return emit_const_pi(statement);
+
+      if (statement == Const_Inf)
+        return emit_const_inf(statement);
+
+      if (statement == Const_NaN)
+        return emit_const_nan(statement);
+
+      if (statement == AddExternal)
+        return emit_add_external(statement);
+
+      if (statement == RemoveExternal)
+        return emit_remove_external(statement);
+
       if (statement == Convert)
         return emit_convert(statement);
 
