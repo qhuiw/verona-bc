@@ -11,6 +11,7 @@ namespace vbcc
     lower_array(llvm::LLVMContext& context, const Node& type)
     {
       assert(type == Array);
+      (void)type;
       auto* pointer_type = llvm::PointerType::getUnqual(context);
       return LoweredType{
         IRValueType::Pointer,
