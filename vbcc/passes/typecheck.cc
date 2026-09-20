@@ -678,7 +678,7 @@ namespace vbcc
               if (node == Region)
                 type_err(
                   node,
-                  "region entry point cannot be a singleton (empty) class");
+                  "region: entry point cannot be a singleton (empty) class");
               else
                 type_err(
                   node,
