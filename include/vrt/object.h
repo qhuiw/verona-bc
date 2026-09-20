@@ -123,6 +123,9 @@ extern "C"
     uintptr_t argc,
     const void* packed_args);
 
+  /** Return the immutable generated class ID for a borrowed object payload. */
+  VRT_EXPORT uintptr_t vrt_object_class_id(const void* payload);
+
   /**
    * Resolve method_id in the immutable dispatch table for an object payload.
    *

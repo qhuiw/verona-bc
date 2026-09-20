@@ -61,8 +61,7 @@ namespace vbcc
 
       bool emit_retain(const Node& use, const LoweredValue& value);
       bool emit_release(const Node& use, const LoweredValue& value);
-      std::optional<LoweredSignature>
-      resolve_lookup_sig(const Node& statement);
+      std::optional<LookupPlan> resolve_lookup(const Node& statement);
       std::optional<llvm::Value*> emit_callable_entry(
         const Node& statement, const LoweredValue& callable);
 
@@ -86,10 +85,10 @@ namespace vbcc
       bool define_class_metadata();
       bool define_program_metadata();
       bool emit_program_entry();
-      bool emit_enter_frame(
-        const Node& statement, llvm::Value* function_descriptor);
-      bool emit_reuse_frame(
-        const Node& statement, llvm::Value* function_descriptor);
+      bool
+      emit_enter_frame(const Node& statement, llvm::Value* function_descriptor);
+      bool
+      emit_reuse_frame(const Node& statement, llvm::Value* function_descriptor);
       bool emit_leave_frame(const Node& statement);
       bool emit_raise_continuation(
         const Node& function,
@@ -103,6 +102,12 @@ namespace vbcc
       bool emit_function(const Node& func);
       bool emit_statement(const Node& statement);
       bool emit_const(const Node& statement);
+      bool emit_const_e(const Node& statement);
+      bool emit_const_pi(const Node& statement);
+      bool emit_const_inf(const Node& statement);
+      bool emit_const_nan(const Node& statement);
+      bool emit_add_external(const Node& statement);
+      bool emit_remove_external(const Node& statement);
       bool emit_convert(const Node& statement);
       bool emit_binop(const Node& statement);
       bool emit_unop(const Node& statement);
@@ -118,10 +123,15 @@ namespace vbcc
       bool emit_new(const Node& statement);
       bool emit_new_array(const Node& statement);
       bool emit_new_array_const(const Node& statement);
+      bool emit_array_copy(const Node& statement);
+      bool emit_array_fill(const Node& statement);
+      bool emit_array_compare(const Node& statement);
       bool emit_heap(const Node& statement);
       bool emit_heap_array(const Node& statement);
       bool emit_region(const Node& statement);
       bool emit_region_array(const Node& statement);
+      bool emit_release_args(
+        const Node& args, const std::vector<LoweredValue>& values);
       std::optional<std::size_t> runtime_type_id(const Node& type);
       std::optional<llvm::Value*> lower_array_size(const Node& statement);
       bool emit_array_allocation(

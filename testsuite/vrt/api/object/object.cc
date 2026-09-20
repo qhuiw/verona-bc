@@ -134,6 +134,7 @@ int main()
     (new_object->allocation == nullptr) ||
     (new_object->region() != frame_region) ||
     (new_object->location() != vrt::Location(frame_region)) ||
+    (vrt_object_class_id(new_value) != value_class_id) ||
     new_object->finalizing || (new_object->reference_count != 1) ||
     (frame_region->header_count() != 1) || !frame_region->contains(new_object))
     return 3;
@@ -167,6 +168,7 @@ int main()
     (singleton_object->location() != vrt::Location::immortal()) ||
     (singleton_object->region() != nullptr) ||
     (singleton_object->cls != &singleton_class) ||
+    (vrt_object_class_id(singleton_new) != singleton_class_id) ||
     (singleton_object->reference_count != 1))
     return 7;
 

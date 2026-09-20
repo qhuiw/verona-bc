@@ -42,6 +42,7 @@ namespace vbcc
         return function;
       };
 
+      runtime.error_raise = declare("vrt_error_raise", void_type, {i32_type});
       runtime.frame_enter =
         declare("vrt_frame_enter", pointer_type, {pointer_type});
       runtime.frame_leave = declare("vrt_frame_leave", void_type, {});
@@ -73,6 +74,18 @@ namespace vbcc
         declare("vrt_array_release", void_type, {pointer_type});
       runtime.array_escape =
         declare("vrt_array_escape", void_type, {pointer_type});
+      runtime.array_copy = declare(
+        "vrt_array_copy",
+        void_type,
+        {pointer_type, word_type, pointer_type, word_type, word_type});
+      runtime.array_fill = declare(
+        "vrt_array_fill",
+        void_type,
+        {pointer_type, word_type, word_type, pointer_type});
+      runtime.array_compare = declare(
+        "vrt_array_compare",
+        i64_type,
+        {pointer_type, word_type, pointer_type, word_type, word_type});
       runtime.object_new = declare(
         "vrt_object_new",
         pointer_type,
@@ -85,6 +98,8 @@ namespace vbcc
         "vrt_object_region",
         pointer_type,
         {i8_type, pointer_type, word_type, pointer_type});
+      runtime.object_class_id =
+        declare("vrt_object_class_id", word_type, {pointer_type});
       runtime.object_lookup_method = declare(
         "vrt_object_lookup", pointer_type, {pointer_type, word_type});
       runtime.object_retain =
@@ -99,6 +114,9 @@ namespace vbcc
 
       if (runtime.frame_raise != nullptr)
         runtime.frame_raise->addFnAttr(llvm::Attribute::NoReturn);
+
+      if (runtime.error_raise != nullptr)
+        runtime.error_raise->addFnAttr(llvm::Attribute::NoReturn);
 
       if (runtime.setjmp != nullptr)
         runtime.setjmp->addFnAttr(llvm::Attribute::ReturnsTwice);

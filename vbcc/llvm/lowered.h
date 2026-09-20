@@ -56,6 +56,18 @@ namespace vbcc
       bool operator==(const LoweredSignature&) const = default;
     };
 
+    struct LookupTarget
+    {
+      std::size_t class_id;
+      llvm::GlobalVariable* descriptor;
+    };
+
+    struct LookupPlan
+    {
+      LoweredSignature signature;
+      std::vector<LookupTarget> targets;
+    };
+
     struct LoweredValue
     {
       LoweredType type;
@@ -93,6 +105,7 @@ namespace vbcc
 
     struct LoweredRuntime
     {
+      llvm::Function* error_raise = nullptr;
       llvm::Function* frame_enter = nullptr;
       llvm::Function* frame_leave = nullptr;
       llvm::Function* frame_reuse = nullptr;
@@ -107,9 +120,13 @@ namespace vbcc
       llvm::Function* array_retain = nullptr;
       llvm::Function* array_release = nullptr;
       llvm::Function* array_escape = nullptr;
+      llvm::Function* array_copy = nullptr;
+      llvm::Function* array_fill = nullptr;
+      llvm::Function* array_compare = nullptr;
       llvm::Function* object_new = nullptr;
       llvm::Function* object_heap = nullptr;
       llvm::Function* object_region = nullptr;
+      llvm::Function* object_class_id = nullptr;
       llvm::Function* object_retain = nullptr;
       llvm::Function* object_release = nullptr;
       llvm::Function* object_escape = nullptr;

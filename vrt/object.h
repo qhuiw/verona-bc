@@ -38,7 +38,6 @@ namespace vrt
       bool immortal = false);
 
     Object& init(uintptr_t argc, const void* packed_args);
-
     void finalize();
     void destroy_storage();
 

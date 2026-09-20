@@ -192,7 +192,6 @@ namespace vrt
       return;
 
     finalizing = true;
-    auto* cls = this->cls;
     auto* payload = static_cast<std::byte*>(get_payload());
 
     for (uintptr_t index = 0; index < cls->field_count; index++)
@@ -209,7 +208,7 @@ namespace vrt
       return;
 
     auto* allocation = this->allocation;
-    this->magic = 0;
+    magic = 0;
     this->~Object();
     delete[] allocation;
   }
@@ -276,6 +275,11 @@ extern "C" VRT_EXPORT void* vrt_object_region(
   validate_arguments(cls, argc, packed_args);
   auto* region = vrt::Region::create(region_type);
   return region->object(cls)->init(argc, packed_args).get_payload();
+}
+
+extern "C" VRT_EXPORT uintptr_t vrt_object_class_id(const void* payload)
+{
+  return vrt::Value{vrt::ValueType::object, payload}.header()->get_type_id();
 }
 
 extern "C" VRT_EXPORT const vrt::Function*

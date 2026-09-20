@@ -59,13 +59,22 @@ function(llvm_test_define test)
     native NODE "${link_node}" FILE "${native_name}")
 
   set(test_working_directory "${CMAKE_CURRENT_SOURCE_DIR}/${test_dir}")
+  set(llvm_validator
+    "${CMAKE_CURRENT_FUNCTION_LIST_DIR}/llvm/cmake/validate_llvm_ir.cmake")
+
+  if(test_name STREQUAL "llvm_dynamic_dispatch")
+    set(llvm_validator
+      "${CMAKE_CURRENT_FUNCTION_LIST_DIR}/llvm/cmake/validate_dynamic_dispatch_switch.cmake")
+  elseif(test_name STREQUAL "llvm_dynamic_dispatch_fallback")
+    set(llvm_validator
+      "${CMAKE_CURRENT_FUNCTION_LIST_DIR}/llvm/cmake/validate_dynamic_dispatch_fallback.cmake")
+  endif()
 
   testsuite_add_test(
     NAME "${emit_node}"
     WORKING_DIRECTORY "${test_working_directory}"
     TIMEOUT 60
-    VALIDATOR
-      "${CMAKE_CURRENT_FUNCTION_LIST_DIR}/llvm/cmake/validate_llvm_ir.cmake"
+    VALIDATOR "${llvm_validator}"
     GOLDENS exit_code.txt stderr.txt stdout.txt
     ARTIFACTS "${llvm_ir_name}"
     COMMAND
