@@ -79,6 +79,8 @@ static void* (*const object_region_signature)(
   const vrt_class*,
   uintptr_t,
   const void*) = vrt_object_region;
+static const vrt_func* (*const object_lookup_signature)(
+  const void*, uintptr_t) = vrt_object_lookup;
 static void (*const object_retain_signature)(void*) = vrt_object_retain;
 static void (*const object_release_signature)(void*) = vrt_object_release;
 static void (*const object_escape_signature)(void*) = vrt_object_escape;
@@ -121,6 +123,7 @@ void verona_program_entry(void)
   (void)object_new_signature;
   (void)object_heap_signature;
   (void)object_region_signature;
+  (void)object_lookup_signature;
   (void)object_retain_signature;
   (void)object_release_signature;
   (void)object_escape_signature;

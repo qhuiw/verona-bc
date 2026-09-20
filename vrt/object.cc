@@ -278,6 +278,32 @@ extern "C" VRT_EXPORT void* vrt_object_region(
   return region->object(cls)->init(argc, packed_args).get_payload();
 }
 
+extern "C" VRT_EXPORT const vrt::Func*
+vrt_object_lookup(const void* payload, uintptr_t method_id)
+{
+  const auto* object = static_cast<vrt::Object*>(
+    vrt::Value{vrt::ValueType::object, payload}.header());
+  const auto* cls = object->cls;
+  uintptr_t first = 0;
+  uintptr_t last = cls->method_count;
+
+  while (first < last)
+  {
+    const auto middle = first + ((last - first) / 2);
+    const auto& method = cls->methods[middle];
+
+    if (method.id < method_id)
+      first = middle + 1;
+    else
+      last = middle;
+  }
+
+  if ((first == cls->method_count) || (cls->methods[first].id != method_id))
+    return nullptr;
+
+  return cls->methods[first].func;
+}
+
 extern "C" VRT_EXPORT void vrt_object_retain(void* payload)
 {
   vrt::Value{vrt::ValueType::object, payload}.reg_inc();

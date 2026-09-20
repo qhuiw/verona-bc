@@ -170,6 +170,16 @@ int main()
     (singleton_object->reference_count != 1))
     return 7;
 
+  auto* first_callable = vrt_object_lookup(singleton_new, 0x101);
+  auto* callable = vrt_object_lookup(singleton_new, 0x201);
+  auto* last_callable = vrt_object_lookup(singleton_new, 0x301);
+  if (
+    (first_callable != &singleton_first_function) ||
+    (callable != &singleton_function) ||
+    (last_callable != &singleton_last_function) ||
+    (vrt_object_lookup(singleton_new, 0x202) != nullptr))
+    return 8;
+
   vrt_object_retain(singleton_new);
   vrt_object_escape(singleton_new);
   vrt_object_release(singleton_again);

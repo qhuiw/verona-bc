@@ -123,6 +123,15 @@ extern "C"
     uintptr_t argc,
     const void* packed_args);
 
+  /**
+   * Resolve method_id in the immutable dispatch table for an object payload.
+   *
+   * Returns null when the object's class does not provide the method. The
+   * returned function metadata has static lifetime and carries no ownership.
+   */
+  VRT_EXPORT const vrt_func*
+  vrt_object_lookup(const void* payload, uintptr_t method_id);
+
   /** Add one owning register reference to an object payload. */
   VRT_EXPORT void vrt_object_retain(void* payload);
 

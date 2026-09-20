@@ -121,6 +121,9 @@ static_assert(
   std::is_same_v<
     decltype(&vrt_object_region),
     void* (*)(vrt_region_type, const vrt_class*, std::uintptr_t, const void*)>);
+static_assert(std::is_same_v<
+              decltype(&vrt_object_lookup),
+              const vrt_func* (*)(const void*, std::uintptr_t)>);
 static_assert(std::is_same_v<decltype(&vrt_object_retain), void (*)(void*)>);
 static_assert(std::is_same_v<decltype(&vrt_object_release), void (*)(void*)>);
 static_assert(std::is_same_v<decltype(&vrt_object_escape), void (*)(void*)>);
