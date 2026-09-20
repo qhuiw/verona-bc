@@ -756,6 +756,8 @@ namespace vbci
         return os << "String";
       case Op::Convert:
         return os << "Convert";
+      case Op::Singleton:
+        return os << "Singleton";
       case Op::New:
         return os << "New";
       case Op::Stack:
@@ -1136,16 +1138,20 @@ namespace vbci
         break;
       }
 
+      case Op::Singleton:
+      {
+        process([](Register& dst, Class& cls) INLINE {
+          assert(cls.singleton && "Op::Singleton requires an empty class");
+          dst = ValueImmortal(cls.singleton);
+        });
+        break;
+      }
+
       case Op::New:
       {
         process(
           [](Register& dst, Class& cls, Thread& self, Frame& frame) INLINE {
-            if (cls.singleton)
-            {
-              dst = ValueImmortal(cls.singleton);
-              return;
-            }
-
+            assert(!cls.singleton && "Op::New must not be used for singletons");
             self.check_args(cls.fields);
             dst = ValueTransfer(&frame.region->object(cls)->init(frame, cls));
           });
@@ -1158,12 +1164,8 @@ namespace vbci
           [](
             Register& dst, Class& cls, Thread& self, Frame& frame, Stack& stack)
             INLINE {
-              if (cls.singleton)
-              {
-                dst = ValueImmortal(cls.singleton);
-                return;
-              }
-
+              assert(
+                !cls.singleton && "Op::Stack must not be used for singletons");
               self.check_args(cls.fields);
               auto mem = stack.alloc(cls.size);
               auto obj =
@@ -1182,14 +1184,8 @@ namespace vbci
                   Class& cls,
                   Thread& self,
                   Frame& frame) INLINE {
+          assert(!cls.singleton && "Op::Heap must not be used for singletons");
           auto region = region_loc->region();
-
-          if (cls.singleton)
-          {
-            dst = ValueImmortal(cls.singleton);
-            return;
-          }
-
           self.check_args(cls.fields);
           dst = ValueTransfer(&region->object(cls)->init(frame, cls));
         });
@@ -1204,11 +1200,8 @@ namespace vbci
                   Class& cls,
                   Thread& self,
                   Frame& frame) INLINE {
-          if (cls.singleton)
-          {
-            Value::error(Error::BadRegionEntryPoint);
-          }
-
+          assert(
+            !cls.singleton && "Op::Region must not be used for singletons");
           self.check_args(cls.fields);
           auto region = Region::create(region_type);
           dst = ValueTransfer(&region->object(cls)->init(frame, cls));
@@ -1558,11 +1551,16 @@ namespace vbci
             else
             {
               auto rep = program.layout_type_id(arg->type_id());
-              symbol.varparam(rep.second);
+              // See Symbol::prepare: `Value`s cross the boundary as pointers,
+              // so the CIF must declare pointer-sized args, not the 16-byte
+              // by-value struct that layout_type_id returns for `Dyn`.
+              auto* cif_type =
+                (rep.first == ValueType::Dyn) ? &ffi_type_pointer : rep.second;
+              symbol.varparam(cif_type);
               vt = rep.first;
             }
 
-            if (vt == ValueType::Invalid)
+            if (vt == ValueType::Dyn)
             {
               // Dynamic type: pass a pointer to the Value.
               ffi_arg_vals.at(i) = &arg;
@@ -2684,7 +2682,7 @@ namespace vbci
     {
       auto vt = cc->arg_value_types[i];
 
-      if (vt == ValueType::Invalid)
+      if (vt == ValueType::Dyn)
       {
         auto* val = static_cast<Value*>(args_[i]);
         arg(args++) = ValueBorrow(*val);
@@ -2703,7 +2701,7 @@ namespace vbci
       {
         return;
       }
-      else if (cc->return_value_type == ValueType::Invalid)
+      else if (cc->return_value_type == ValueType::Dyn)
       {
         *static_cast<Value*>(ret) = result.extract();
       }

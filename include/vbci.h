@@ -46,27 +46,39 @@ namespace vbci
     // Arg2 = src.
     Convert,
 
+    // Loads the immortal singleton object for a class with no fields. The
+    // class must have zero fields; this is checked statically by the compiler
+    // and asserted by the runtime.
+    // Arg0 = dst.
+    // Arg1 = class ID.
+    Singleton,
+
     // Allocates a new object in the frame-local region. Fields are initialized
-    // from arguments.
+    // from arguments. The class must not be a singleton (i.e. must have at
+    // least one field); use Singleton for empty classes instead.
     // Arg0 = dst.
     // Arg1 = class ID.
     New,
 
     // Allocates a new object in the current frame. Fields are initialized from
-    // arguments.
+    // arguments. The class must not be a singleton; use Singleton for empty
+    // classes instead.
     // Arg0 = dst.
     // Arg1 = class ID.
     Stack,
 
     // Allocates a new object in the same region. Fields are initialized from
-    // arguments.
+    // arguments. The class must not be a singleton; use Singleton for empty
+    // classes instead.
     // Arg0 = dst.
     // Arg1 = allocation in the target region.
     // Arg2 = class ID.
     Heap,
 
     // Allocates a new object in a new region. Fields are initialized from
-    // arguments.
+    // arguments. The class must not be a singleton — singletons are immortal
+    // and cannot be region entry points; this is enforced by the compiler
+    // and asserted by the runtime.
     // Arg0 = dst.
     // Arg1 = region type.
     // Arg2 = class ID.
@@ -442,6 +454,26 @@ namespace vbci
     ArrayCompare,
   };
 
+  // ValueType is punned across two roles:
+  //   1. Runtime tag: the concrete kind of value stored in a `Value` at
+  //      runtime. Every entry other than `Dyn` can appear here (including
+  //      `Invalid` for empty/moved-from Values, and `RegisterRef` /
+  //      `FieldRef` / `ArrayRef` / `CownRef` / `Function` / `Error` for
+  //      first-class references and error values).
+  //   2. Static/layout classification: what `layout_type_id` reports for
+  //      a Verona static type, used to build FFI CIF descriptors and to
+  //      drive header/field tracing. Only a subset of the enum is
+  //      produced here — primitives, `Ptr`, `Object`, `Array`, `Cown`,
+  //      and `Dyn`. Types without a more optimal machine layout (`any`,
+  //      `ref`, heterogeneous unions, and also anything whose runtime
+  //      tag would be `RegisterRef`/`FieldRef`/etc.) all map to `Dyn`.
+  // The two roles agree for primitives, `Ptr`, `Object`, `Array`, `Cown`.
+  // `Dyn` only appears as a layout classification (never as a runtime
+  // tag — a `Dyn`-classified location at runtime holds a `Value` whose
+  // tag is some concrete `ValueType`). `Invalid`, `RegisterRef`,
+  // `FieldRef`, `ArrayRef`, `CownRef`, `Function`, and `Error` only
+  // appear as runtime tags (never as a layout classification — those
+  // static types collapse to `Dyn`).
   enum class ValueType : uint8_t
   {
     None,
@@ -470,6 +502,7 @@ namespace vbci
     CownRef,
     Function,
     Error,
+    Dyn,
     Invalid,
   };
 

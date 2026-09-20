@@ -244,7 +244,7 @@ namespace vbci
     if (type_id == DynId)
     {
       // Dynamic.
-      return {ValueType::Invalid, &ffi_type_value};
+      return {ValueType::Dyn, &ffi_type_value};
     }
     else if (type_id < NumPrimitiveClasses)
     {
@@ -310,7 +310,7 @@ namespace vbci
         case TypeTag::Cown:
           return {ValueType::Cown, &ffi_type_pointer};
         case TypeTag::Ref:
-          return {ValueType::Invalid, &ffi_type_value};
+          return {ValueType::Dyn, &ffi_type_value};
         case TypeTag::Union:
           return layout_union_type(c);
         case TypeTag::Tuple:
@@ -354,7 +354,7 @@ namespace vbci
       return rep;
 
     // Otherwise, use the generic Value representation.
-    return {ValueType::Invalid, &ffi_type_value};
+    return {ValueType::Dyn, &ffi_type_value};
   }
 
   bool Program::is_complex(uint32_t type_id)

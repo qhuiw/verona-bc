@@ -663,8 +663,8 @@ namespace vbcc
         }
         else if (node->in({New, Stack, Heap, Region}))
         {
-          // Object allocation always initializes the class fields, regardless
-          // of which region supplies the storage.
+          // dst gets the ClassId type. Check arg types vs field types, and
+          // require a non-singleton class (singletons must use Op::Singleton).
           auto class_id = node / ClassId;
           auto args = node / Args;
           auto cls = find_class(class_id);
@@ -673,14 +673,17 @@ namespace vbcc
           {
             auto fields = cls / Fields;
 
-            if ((node == Region) && fields->empty())
+            if (fields->empty())
             {
-              type_err(
-                node,
-                std::format(
-                  "region: singleton class '{}' cannot be a region entry "
-                  "point",
-                  type_name(class_id)));
+              if (node == Region)
+                type_err(
+                  node,
+                  "region entry point cannot be a singleton (empty) class");
+              else
+                type_err(
+                  node,
+                  "constructor: class has no fields; use singleton instead");
+              return true;
             }
 
             auto f_it = fields->begin();
@@ -696,8 +699,8 @@ namespace vbcc
                 type_err(
                   *a_it,
                   std::format(
-                    "new: argument type '{}' is not a subtype of field type "
-                    "'{}'",
+                    "constructor: argument type '{}' is not a subtype of "
+                    "field type '{}'",
                     type_name(arg_type),
                     type_name(field_type)));
                 return true;
@@ -706,6 +709,23 @@ namespace vbcc
               ++f_it;
               ++a_it;
             }
+          }
+
+          set_type(env, node / LocalId, clone(class_id));
+        }
+        else if (node == Singleton)
+        {
+          // Immortal empty object; class must have no fields.
+          auto class_id = node / ClassId;
+          auto cls = find_class(class_id);
+
+          if (cls && !(cls / Fields)->empty())
+          {
+            type_err(
+              node,
+              "singleton: class has fields; use new/stack/heap/region "
+              "instead");
+            return true;
           }
 
           set_type(env, node / LocalId, clone(class_id));

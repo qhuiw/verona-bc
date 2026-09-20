@@ -66,6 +66,15 @@ jobs:
               sudo apt-get update
               sudo apt-get install -y ninja-build pkg-config libssl-dev libzstd-dev libffi-dev libgit2-dev llvm-18-dev
               echo "LLVM_DIR=/usr/lib/llvm-18/lib/cmake/llvm" >> "$GITHUB_ENV"
+
+          - variant: "Sanitizer"
+            platform: "ubuntu-24.04-arm"
+            build-type: "Release"
+            cmake-flags: "-G Ninja -DSANITIZER=address,undefined -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang"
+            dependencies: |
+              sudo apt-get update
+              sudo apt-get install -y ninja-build pkg-config libssl-dev libzstd-dev libffi-dev libgit2-dev llvm-18-dev
+              echo "LLVM_DIR=/usr/lib/llvm-18/lib/cmake/llvm" >> "$GITHUB_ENV"
       # Don't abort runners if a single one fails
       fail-fast: false
     runs-on: ${{matrix.platform}}
