@@ -1,5 +1,6 @@
 #include "codegen.h"
 
+#include <llvm/Config/llvm-config.h>
 #include <llvm/IR/Verifier.h>
 #include <llvm/MC/TargetRegistry.h>
 #include <llvm/Support/FileSystem.h>
@@ -63,8 +64,13 @@ namespace vbcc
       }
 
       std::string error;
+#if LLVM_VERSION_MAJOR >= 22
       const auto* target =
         llvm::TargetRegistry::lookupTarget(target_triple, error);
+#else
+      const auto* target =
+        llvm::TargetRegistry::lookupTarget(target_triple.str(), error);
+#endif
 
       if (target == nullptr)
       {
@@ -85,7 +91,11 @@ namespace vbcc
         return false;
       }
 
+#if LLVM_VERSION_MAJOR >= 22
       module.setTargetTriple(target_triple);
+#else
+      module.setTargetTriple(target_triple.str());
+#endif
       module.setDataLayout(target_machine->createDataLayout());
       return true;
     }

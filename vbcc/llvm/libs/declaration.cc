@@ -93,6 +93,7 @@ namespace vbcc
         auto library_index = libraries.size();
         auto insertion = library_indices.emplace(path, library_index);
         assert(insertion.second);
+        (void)insertion;
 
         libraries.push_back(
           LoweredLibrary{
