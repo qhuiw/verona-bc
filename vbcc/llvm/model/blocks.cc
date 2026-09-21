@@ -1,6 +1,6 @@
 #include "blocks.h"
 
-#include "codegen.h"
+#include "../codegen.h"
 
 #include <cassert>
 #include <llvm/IR/BasicBlock.h>

@@ -1,7 +1,7 @@
 #pragma once
 
-#include "../lang.h"
-#include "lowered.h"
+#include "../../lang.h"
+#include "representation.h"
 
 #include <optional>
 #include <string>

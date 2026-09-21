@@ -1,7 +1,6 @@
 llvm_map_components_to_libnames(VERONA_LLVM_LIBS Core Support native)
 
 add_library(libvbcllvm STATIC
-  blocks.cc
   classes.cc
   codegen.cc
   # Shared call lowering.
@@ -28,7 +27,8 @@ add_library(libvbcllvm STATIC
   literals.cc
   literals/integer.cc
   literals/literal.cc
-  locals.cc
+  model/blocks.cc
+  model/locals.cc
   module.cc
   ownership.cc
   program.cc

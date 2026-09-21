@@ -1,11 +1,10 @@
 #pragma once
 
-#include "../../include/vrt/value.h"
+#include "representation.h"
 
 #include <cstddef>
 #include <optional>
 #include <string>
-#include <utility>
 #include <vector>
 
 namespace llvm
@@ -14,89 +13,26 @@ namespace llvm
   class Function;
   class GlobalVariable;
   class StructType;
-  class Type;
-  class Value;
 }
 
 namespace vbcc
 {
   namespace llvm_backend
   {
-    enum class IRValueType
-    {
-      None,
-      Bool,
-      SignedInteger,
-      UnsignedInteger,
-      Float,
-      Pointer,
-      Function,
-    };
-
-    struct LoweredType
-    {
-      IRValueType ir_type;
-      // Selects the runtime representation and lifetime operations associated
-      // with values of this type.
-      vrt::ValueType runtime_type;
-      llvm::Type* llvm_type;
-
-      // LLVM layout used when a VIR value needs addressable storage. The
-      // mutable Vars use this for their function-local slots. None has no
-      // storage representation and uses nullptr.
-      llvm::Type* storage_type;
-
-      bool operator==(const LoweredType&) const = default;
-    };
-
-    struct LoweredSignature
-    {
-      LoweredType return_type;
-      std::vector<LoweredType> param_types;
-
-      bool operator==(const LoweredSignature&) const = default;
-    };
-
-    struct LookupTarget
-    {
-      std::size_t class_id;
-      llvm::GlobalVariable* descriptor;
-    };
-
-    struct LookupPlan
-    {
-      LoweredSignature signature;
-      std::vector<LookupTarget> targets;
-    };
-
-    struct LoweredValue
-    {
-      LoweredType type;
-      llvm::Value* value = nullptr;
-      std::optional<LoweredSignature> signature;
-
-      LoweredValue(
-        LoweredType type,
-        llvm::Value* value,
-        std::optional<LoweredSignature> signature = {})
-      : type(type), value(value), signature(std::move(signature))
-      {}
-    };
-
-    struct LoweredFunction
+    struct FunctionState
     {
       llvm::Function* function;
       LoweredSignature signature;
       llvm::GlobalVariable* descriptor = nullptr;
     };
 
-    struct LoweredSingleton
+    struct SingletonInitEntry
     {
       llvm::GlobalVariable* storage;
       llvm::GlobalVariable* cls;
     };
 
-    struct LoweredClass
+    struct ClassState
     {
       std::size_t type_id;
       llvm::StructType* payload_type;
@@ -105,7 +41,7 @@ namespace vbcc
       llvm::Constant* singleton = nullptr;
     };
 
-    struct LoweredRuntime
+    struct RuntimeState
     {
       llvm::Function* error_raise = nullptr;
       llvm::Function* frame_enter = nullptr;
@@ -137,7 +73,7 @@ namespace vbcc
       llvm::Function* setjmp = nullptr;
     };
 
-    struct LoweredLibrary
+    struct LibraryState
     {
       std::string path;
       std::optional<std::string> init_function_id;
@@ -150,7 +86,7 @@ namespace vbcc
       llvm::GlobalVariable* finalizer_slot = nullptr;
     };
 
-    struct LoweredSymbol
+    struct SymbolState
     {
       std::size_t library_index;
       std::string linker_name;

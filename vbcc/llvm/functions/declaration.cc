@@ -67,7 +67,7 @@ namespace vbcc
         function->setCallingConv(llvm::CallingConv::Tail);
         functions.emplace(
           id,
-          LoweredFunction{
+          FunctionState{
             function,
             LoweredSignature{*lowered_return, std::move(*lowered_params)}});
       }

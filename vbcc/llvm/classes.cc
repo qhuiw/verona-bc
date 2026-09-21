@@ -26,7 +26,7 @@ namespace vbcc
         if (!classes
                .emplace(
                  name,
-                 LoweredClass{
+                 ClassState{
                    NumPrimitiveClasses + index, payload_type, {}, nullptr})
                .second)
         {

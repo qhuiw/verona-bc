@@ -1,6 +1,6 @@
 #include "locals.h"
 
-#include "codegen.h"
+#include "../codegen.h"
 
 #include <llvm/IR/Value.h>
 

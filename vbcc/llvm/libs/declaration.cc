@@ -72,7 +72,7 @@ namespace vbcc
           function->setCallingConv(llvm::CallingConv::C);
           symbols.emplace(
             node_text(symbol_id),
-            LoweredSymbol{
+            SymbolState{
               library_index,
               std::move(linker_name_text),
               std::move(version_text),
@@ -96,7 +96,7 @@ namespace vbcc
         (void)insertion;
 
         libraries.push_back(
-          LoweredLibrary{
+          LibraryState{
             path,
             init_func->type() == FunctionId ?
               std::make_optional(node_text(init_func)) :

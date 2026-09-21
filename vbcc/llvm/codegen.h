@@ -2,9 +2,11 @@
 
 #include "../bytecode.h"
 #include "../lang.h"
-#include "blocks.h"
-#include "locals.h"
-#include "lowered.h"
+#include "model/blocks.h"
+#include "model/dispatch.h"
+#include "model/locals.h"
+#include "model/representation.h"
+#include "model/state.h"
 
 #include <filesystem>
 #include <llvm/IR/IRBuilder.h>
@@ -30,13 +32,13 @@ namespace vbcc
       llvm::LLVMContext context;
       llvm::Module module;
       llvm::IRBuilder<> builder;
-      std::vector<LoweredLibrary> libraries;
-      std::unordered_map<std::string, LoweredSymbol> symbols;
-      std::unordered_map<std::string, LoweredFunction> functions;
-      std::unordered_map<std::string, LoweredClass> classes;
+      std::vector<LibraryState> libraries;
+      std::unordered_map<std::string, SymbolState> symbols;
+      std::unordered_map<std::string, FunctionState> functions;
+      std::unordered_map<std::string, ClassState> classes;
       std::vector<Node> runtime_types;
-      std::vector<LoweredSingleton> singletons;
-      LoweredRuntime runtime;
+      std::vector<SingletonInitEntry> singletons;
+      RuntimeState runtime;
       llvm::Function* program_entry = nullptr;
       BasicBlockState blocks;
       LocalState locals;
