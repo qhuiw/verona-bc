@@ -102,6 +102,7 @@ function(llvm_test_define test)
     ARTIFACTS "${native_object_name}"
     COMMAND
       "${VERONA_LLC}"
+      -relocation-model=pic
       -filetype=obj
       "${llvm_bc}"
       -o "${native_object}")
