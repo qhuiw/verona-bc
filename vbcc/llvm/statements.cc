@@ -87,6 +87,15 @@ namespace vbcc
       if (statement->type().in({RegionArray, RegionArrayConst}))
         return emit_region_array(statement);
 
+      if (statement == ArrayCopy)
+        return emit_array_copy(statement);
+
+      if (statement == ArrayFill)
+        return emit_array_fill(statement);
+
+      if (statement == ArrayCompare)
+        return emit_array_compare(statement);
+
       if (statement == Heap)
         return emit_heap(statement);
 
