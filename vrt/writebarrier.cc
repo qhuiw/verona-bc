@@ -6,6 +6,7 @@
 #include "header.h"
 #include "object.h"
 #include "region.h"
+#include "value.h"
 
 #include <cstring>
 #include <limits>

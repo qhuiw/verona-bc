@@ -20,22 +20,6 @@ namespace
     return (value != 0) && ((value & (value - 1)) == 0);
   }
 
-  [[maybe_unused]] bool is_supported_value_type(vrt::ValueType value_type)
-  {
-    switch (value_type)
-    {
-      case vrt::ValueType::none:
-      case vrt::ValueType::scalar:
-      case vrt::ValueType::raw_pointer:
-      case vrt::ValueType::object:
-      case vrt::ValueType::array:
-        return true;
-
-      default:
-        return false;
-    }
-  }
-
   void validate_class(const vrt::Class* cls)
   {
     internal_check(cls != nullptr, vrt::Failure::invalid_object_state);
@@ -60,7 +44,7 @@ namespace
     {
       const auto& field = cls->fields[index];
       internal_check(
-        is_supported_value_type(field.value_type) &&
+        vrt::is_supported_storage_type(field.value_type) &&
           (field.offset <= cls->data_size) &&
           (field.size <= (cls->data_size - field.offset)) &&
           (!vrt::is_header_type(field.value_type) ||

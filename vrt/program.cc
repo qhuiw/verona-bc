@@ -3,6 +3,7 @@
 #include "failure.h"
 #include "object.h"
 #include "thread_context.h"
+#include "value.h"
 #include "vrt.h"
 
 #include <mutex>
@@ -18,22 +19,6 @@ namespace
   bool runtime_initialized = false;
   std::unordered_set<const vrt::Program*> initialized_programs;
   std::unordered_map<uintptr_t, vrt::TypeInfo> type_registry;
-
-  [[maybe_unused]] bool is_valid_value_type(vrt::ValueType value_type)
-  {
-    switch (value_type)
-    {
-      case vrt::ValueType::none:
-      case vrt::ValueType::scalar:
-      case vrt::ValueType::raw_pointer:
-      case vrt::ValueType::object:
-      case vrt::ValueType::array:
-        return true;
-
-      default:
-        return false;
-    }
-  }
 
   void init_runtime_services()
   {
@@ -66,7 +51,7 @@ namespace
       {
         const auto& type = program.types[index];
         internal_check(
-          is_valid_value_type(type.value_type) &&
+          vrt::is_supported_storage_type(type.value_type) &&
             ((type.value_type == vrt::ValueType::none) ==
              (type.storage_size == 0)) &&
             ((type.value_type == vrt::ValueType::array) ||

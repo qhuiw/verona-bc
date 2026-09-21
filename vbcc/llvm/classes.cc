@@ -1,4 +1,5 @@
 #include "../../vrt/object.h"
+#include "../../vrt/value.h"
 #include "codegen.h"
 
 #include <algorithm>
@@ -180,17 +181,12 @@ namespace vbcc
             return false;
           }
 
-          switch (field_type.runtime_type)
+          if (
+            !vrt::is_supported_storage_type(field_type.runtime_type) ||
+            (field_type.runtime_type == vrt::ValueType::array))
           {
-            case vrt::ValueType::none:
-            case vrt::ValueType::scalar:
-            case vrt::ValueType::raw_pointer:
-            case vrt::ValueType::object:
-              break;
-
-            default:
-              fail(field / Type, "unsupported class field runtime type");
-              return false;
+            fail(field / Type, "unsupported class field runtime type");
+            return false;
           }
 
           auto field_size = field_type.runtime_type == vrt::ValueType::none ?

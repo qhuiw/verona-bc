@@ -66,6 +66,4 @@ namespace vrt
     void field_inc();
     void field_dec();
   };
-
-  bool is_header_type(ValueType value_type);
 }

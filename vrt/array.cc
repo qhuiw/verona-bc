@@ -3,6 +3,7 @@
 #include "failure.h"
 #include "program.h"
 #include "region.h"
+#include "value.h"
 #include "writebarrier.h"
 
 #include <cstring>
@@ -15,22 +16,6 @@ namespace vrt
 {
   namespace
   {
-    bool is_supported_value_type(ValueType value_type)
-    {
-      switch (value_type)
-      {
-        case ValueType::none:
-        case ValueType::scalar:
-        case ValueType::raw_pointer:
-        case ValueType::object:
-        case ValueType::array:
-          return true;
-
-        default:
-          return false;
-      }
-    }
-
     void check_range(uintptr_t size, uintptr_t offset, uintptr_t length)
     {
       if ((offset > size) || (length > (size - offset)))
@@ -70,7 +55,7 @@ namespace vrt
     auto layout = layout_type_id(unarray(type_id));
 
     if (
-      (allocation == nullptr) || !is_supported_value_type(value_type) ||
+      (allocation == nullptr) || !is_supported_storage_type(value_type) ||
       (layout_type_id(type_id).value_type != ValueType::array) ||
       (layout.value_type != value_type) || (layout.storage_size != stride) ||
       ((value_type != ValueType::none) && (size != 0) && (stride == 0)) ||

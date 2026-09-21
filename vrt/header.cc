@@ -43,12 +43,6 @@ namespace vrt
     }
   }
 
-  bool is_header_type(ValueType value_type)
-  {
-    return (value_type == ValueType::object) ||
-      (value_type == ValueType::array);
-  }
-
   ValueType Header::value_type() const
   {
     return layout_type_id(type_id).value_type;

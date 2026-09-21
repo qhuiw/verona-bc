@@ -9,6 +9,48 @@ namespace vrt
   struct Header;
   struct Region;
 
+  inline constexpr bool is_valid_value_type(ValueType value_type)
+  {
+    switch (value_type)
+    {
+      case ValueType::none:
+      case ValueType::scalar:
+      case ValueType::raw_pointer:
+      case ValueType::object:
+      case ValueType::array:
+      case ValueType::reference:
+      case ValueType::cown:
+      case ValueType::dynamic:
+      case ValueType::aggregate:
+        return true;
+
+      default:
+        return false;
+    }
+  }
+
+  inline constexpr bool is_supported_storage_type(ValueType value_type)
+  {
+    switch (value_type)
+    {
+      case ValueType::none:
+      case ValueType::scalar:
+      case ValueType::raw_pointer:
+      case ValueType::object:
+      case ValueType::array:
+        return true;
+
+      default:
+        return false;
+    }
+  }
+
+  inline constexpr bool is_header_type(ValueType value_type)
+  {
+    return (value_type == ValueType::object) ||
+      (value_type == ValueType::array);
+  }
+
   /** Non-owning, type-erased view over one runtime value. */
   class Value final
   {
