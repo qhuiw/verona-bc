@@ -1,7 +1,10 @@
+// See README.md for the object-runtime coverage and test boundaries.
+
 #include "object.h"
 
 #include "frame.h"
 #include "region.h"
+#include "region_rc.h"
 #include "value.h"
 
 #include <csetjmp>
@@ -110,95 +113,133 @@ int main()
 
   // New allocates in the current frame's region and copies the
   // payload-shaped field packet through the initialization barrier.
-  ValuePayload new_args{42};
-  auto* new_value = vrt_object_new(&value_class, 1, &new_args);
-  auto* new_object = object_from_payload(new_value);
+  ValuePayload frame_object_args{42};
+  auto* frame_object_payload =
+    vrt_object_new(&value_class, 1, &frame_object_args);
+  auto* frame_object = object_from_payload(frame_object_payload);
   if (
-    (new_value == nullptr) ||
-    ((reinterpret_cast<uintptr_t>(new_value) % alignof(ValuePayload)) != 0) ||
-    (static_cast<ValuePayload*>(new_value)->value != 42) ||
-    (new_object->value_type() != vrt::ValueType::object) ||
-    (reinterpret_cast<std::byte*>(new_value) - sizeof(vrt::Object) !=
-     reinterpret_cast<std::byte*>(new_object)) ||
-    (new_object->cls != &value_class) ||
-    (new_object->get_payload() != new_value) ||
-    (vrt::Value{vrt::ValueType::object, new_value}.header() != new_object) ||
-    (vrt::Value{vrt::ValueType::object, new_value}.type() !=
+    (frame_object_payload == nullptr) ||
+    ((reinterpret_cast<uintptr_t>(frame_object_payload) %
+      alignof(ValuePayload)) != 0) ||
+    (static_cast<ValuePayload*>(frame_object_payload)->value != 42) ||
+    (frame_object->value_type() != vrt::ValueType::object) ||
+    (reinterpret_cast<std::byte*>(frame_object_payload) - sizeof(vrt::Object) !=
+     reinterpret_cast<std::byte*>(frame_object)) ||
+    (frame_object->cls != &value_class) ||
+    (frame_object->get_payload() != frame_object_payload) ||
+    (vrt::Value{vrt::ValueType::object, frame_object_payload}.header() !=
+     frame_object) ||
+    (vrt::Value{vrt::ValueType::object, frame_object_payload}.type() !=
      vrt::ValueType::object) ||
-    (vrt::Value{vrt::ValueType::object, new_value}.location() !=
+    (vrt::Value{vrt::ValueType::object, frame_object_payload}.location() !=
      vrt::Location(frame_region)) ||
-    (vrt::Value{vrt::ValueType::object, new_value}.region() != frame_region) ||
+    (vrt::Value{vrt::ValueType::object, frame_object_payload}.region() !=
+     frame_region) ||
     (vrt::Value{vrt::ValueType::scalar, nullptr}.location() !=
      vrt::Location::immortal()) ||
-    (vrt::payload_from_header(new_object) != new_value) ||
-    (new_object->allocation == nullptr) ||
-    (new_object->region() != frame_region) ||
-    (new_object->location() != vrt::Location(frame_region)) ||
-    (vrt_object_class_id(new_value) != value_class_id) ||
-    new_object->finalizing || (new_object->reference_count != 1) ||
-    (frame_region->header_count() != 1) || !frame_region->contains(new_object))
+    (vrt::payload_from_header(frame_object) != frame_object_payload) ||
+    (frame_object->allocation == nullptr) ||
+    (frame_object->region() != frame_region) ||
+    (frame_object->location() != vrt::Location(frame_region)) ||
+    (vrt_object_class_id(frame_object_payload) != value_class_id) ||
+    frame_object->finalizing || (frame_object->reference_count != 1) ||
+    (frame_region->header_count() != 1) ||
+    !frame_region->contains(frame_object))
     return 3;
 
-  vrt_object_retain(new_value);
-  if (new_object->reference_count != 2)
+  vrt_object_retain(frame_object_payload);
+  if (frame_object->reference_count != 2)
     return 4;
 
-  vrt_object_release(new_value);
-  if ((new_object->reference_count != 1) || !frame_region->contains(new_object))
+  vrt_object_release(frame_object_payload);
+  if (
+    (frame_object->reference_count != 1) ||
+    !frame_region->contains(frame_object))
     return 5;
 
-  vrt_object_release(new_value);
+  vrt_object_release(frame_object_payload);
   if (frame_region->header_count() != 0)
     return 6;
+
+  ValuePayload region_object_args{17};
+  auto* region_object_payload = vrt_object_region(
+    vrt::RegionType::rc, &value_class, 1, &region_object_args);
+  auto* region_object = object_from_payload(region_object_payload);
+  if (
+    (static_cast<ValuePayload*>(region_object_payload)->value != 17) ||
+    (region_object->cls != &value_class) ||
+    (region_object->region() == nullptr) ||
+    region_object->region()->is_frame_local() ||
+    (dynamic_cast<vrt::RegionRC*>(region_object->region()) == nullptr) ||
+    (region_object->reference_count != 1) ||
+    (region_object->region()->header_count() != 1))
+    return 17;
+
+  ValuePayload heap_object_args{18};
+  auto* heap_object_payload =
+    vrt_object_heap(region_object_payload, &value_class, 1, &heap_object_args);
+  auto* heap_object = object_from_payload(heap_object_payload);
+  if (
+    (static_cast<ValuePayload*>(heap_object_payload)->value != 18) ||
+    (heap_object->cls != &value_class) ||
+    (heap_object->region() != region_object->region()) ||
+    (heap_object->reference_count != 1) ||
+    (region_object->region()->header_count() != 2))
+    return 21;
+
+  vrt_object_release(heap_object_payload);
+  if (region_object->region()->header_count() != 1)
+    return 22;
 
   // Empty descriptors name one compiler-managed immortal object before any
   // allocation operation. Heap creation returns that same object after
   // validating the borrowed region locator.
-  ValuePayload singleton_locator_args{14};
-  auto* singleton_locator = vrt_object_region(
-    vrt::RegionType::rc, &value_class, 1, &singleton_locator_args);
-  auto* singleton_new = vrt_object_new(&singleton_class, 0, nullptr);
-  auto* singleton_again = vrt_object_new(&singleton_class, 0, nullptr);
-  auto* singleton_heap =
-    vrt_object_heap(singleton_locator, &singleton_class, 0, nullptr);
-  auto* singleton_object = object_from_payload(singleton_new);
+  auto* singleton_new_object_payload =
+    vrt_object_new(&singleton_class, 0, nullptr);
+  auto* singleton_again_object_payload =
+    vrt_object_new(&singleton_class, 0, nullptr);
+  auto* singleton_heap_object_payload =
+    vrt_object_heap(region_object_payload, &singleton_class, 0, nullptr);
+  auto* singleton_object = object_from_payload(singleton_new_object_payload);
   if (
-    (singleton_new != singleton_again) || (singleton_new != singleton_heap) ||
-    (singleton_class.singleton != singleton_new) ||
+    (singleton_new_object_payload != singleton_again_object_payload) ||
+    (singleton_new_object_payload != singleton_heap_object_payload) ||
+    (singleton_class.singleton != singleton_new_object_payload) ||
     (singleton_object->location() != vrt::Location::immortal()) ||
     (singleton_object->region() != nullptr) ||
     (singleton_object->cls != &singleton_class) ||
-    (vrt_object_class_id(singleton_new) != singleton_class_id) ||
+    (vrt_object_class_id(singleton_new_object_payload) != singleton_class_id) ||
     (singleton_object->reference_count != 1))
     return 7;
 
-  auto* first_callable = vrt_object_lookup(singleton_new, 0x101);
-  auto* callable = vrt_object_lookup(singleton_new, 0x201);
-  auto* last_callable = vrt_object_lookup(singleton_new, 0x301);
+  auto* first_callable = vrt_object_lookup(singleton_new_object_payload, 0x101);
+  auto* callable = vrt_object_lookup(singleton_new_object_payload, 0x201);
+  auto* last_callable = vrt_object_lookup(singleton_new_object_payload, 0x301);
   if (
     (first_callable != &singleton_first_function) ||
     (callable != &singleton_function) ||
     (last_callable != &singleton_last_function) ||
-    (vrt_object_lookup(singleton_new, 0x202) != nullptr))
+    (vrt_object_lookup(singleton_new_object_payload, 0x202) != nullptr))
     return 8;
 
-  vrt_object_retain(singleton_new);
-  vrt_object_escape(singleton_new);
-  vrt_object_release(singleton_again);
-  vrt_object_release(singleton_heap);
+  vrt_object_retain(singleton_new_object_payload);
+  vrt_object_escape(singleton_new_object_payload);
+  vrt_object_release(singleton_again_object_payload);
+  vrt_object_release(singleton_heap_object_payload);
   if (
-    (singleton_class.singleton != singleton_new) ||
+    (singleton_class.singleton != singleton_new_object_payload) ||
     (singleton_object->reference_count != 1))
     return 9;
 
-  vrt_object_release(singleton_locator);
+  vrt_object_release(region_object_payload);
   if (frame_region->header_count() != 0)
     return 10;
 
   auto* child_frame = vrt_frame_enter(&child_function);
-  ValuePayload escaped_args{12};
-  auto* escaped = vrt_object_new(&value_class, 1, &escaped_args);
-  auto* escaped_object = object_from_payload(escaped);
+  ValuePayload escaped_object_args{12};
+  auto* escaped_object_payload =
+    vrt_object_new(&value_class, 1, &escaped_object_args);
+  auto* escaped_object = object_from_payload(escaped_object_payload);
   auto* callee_region = child_frame->region;
   if (
     (callee_region == nullptr) || (callee_region == frame_region) ||
@@ -206,7 +247,7 @@ int main()
     !callee_region->contains(escaped_object))
     return 11;
 
-  vrt_object_escape(escaped);
+  vrt_object_escape(escaped_object_payload);
   if (
     (escaped_object->region() != frame_region) ||
     !frame_region->contains(escaped_object) ||
@@ -217,12 +258,12 @@ int main()
   vrt_frame_leave();
   if (
     (vrt_thread_current_frame() != root_frame) ||
-    (static_cast<ValuePayload*>(escaped)->value != 12) ||
+    (static_cast<ValuePayload*>(escaped_object_payload)->value != 12) ||
     (escaped_object->region() != frame_region) ||
     !frame_region->contains(escaped_object))
     return 13;
 
-  vrt_object_release(escaped);
+  vrt_object_release(escaped_object_payload);
   if (frame_region->header_count() != 0)
     return 14;
 
@@ -234,9 +275,10 @@ int main()
   if (setjmp(*continuation) == 0)
   {
     auto* intermediate_frame = vrt_frame_enter(&intermediate_function);
-    ValuePayload raised_args{13};
-    auto* raised = vrt_object_new(&value_class, 1, &raised_args);
-    auto* raised_object = object_from_payload(raised);
+    ValuePayload raised_object_args{13};
+    auto* raised_object_payload =
+      vrt_object_new(&value_class, 1, &raised_object_args);
+    auto* raised_object = object_from_payload(raised_object_payload);
     auto* intermediate_region = intermediate_frame->region;
     auto* raise_frame = vrt_frame_enter(&child_function);
     if (
@@ -248,20 +290,21 @@ int main()
 
     vrt_frame_raise(
       VRT_VALUE_TYPE_OBJECT,
-      static_cast<uint64_t>(reinterpret_cast<uintptr_t>(raised)));
+      static_cast<uint64_t>(
+        reinterpret_cast<uintptr_t>(raised_object_payload)));
   }
 
-  auto* raised = reinterpret_cast<void*>(
+  auto* raised_object_payload = reinterpret_cast<void*>(
     static_cast<uintptr_t>(vrt_frame_take_raised_value()));
-  auto* raised_object = object_from_payload(raised);
+  auto* raised_object = object_from_payload(raised_object_payload);
   if (
     (vrt_thread_current_frame() != root_frame) ||
     (raised_object->region() != frame_region) ||
-    (static_cast<ValuePayload*>(raised)->value != 13) ||
+    (static_cast<ValuePayload*>(raised_object_payload)->value != 13) ||
     !frame_region->contains(raised_object))
     return 18;
 
-  vrt_object_release(raised);
+  vrt_object_release(raised_object_payload);
   if (frame_region->header_count() != 0)
     return 19;
 
