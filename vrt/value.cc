@@ -1,10 +1,8 @@
 #include "value.h"
 
-#include "array.h"
 #include "error.h"
 #include "failure.h"
 #include "header.h"
-#include "object.h"
 #include "thread_context.h"
 
 namespace vrt
@@ -28,30 +26,7 @@ namespace vrt
 
   Header* Value::header() const
   {
-    internal_check(payload != nullptr, Failure::invalid_value_state);
-
-    Header* result = nullptr;
-    switch (value_type)
-    {
-      case ValueType::object:
-        result = reinterpret_cast<Object*>(const_cast<void*>(payload)) - 1;
-        break;
-
-      case ValueType::array:
-        result = reinterpret_cast<Array*>(const_cast<void*>(payload)) - 1;
-        break;
-
-      default:
-        fail(Failure::invalid_value_state);
-    }
-
-    internal_check(
-      (result->magic == Header::magic_value) &&
-        (result->value_type() == value_type) &&
-        (payload_from_header(result) == payload),
-      Failure::invalid_value_state);
-
-    return result;
+    return Header::from_data(value_type, data_address);
   }
 
   Location Value::location() const

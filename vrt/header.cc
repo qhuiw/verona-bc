@@ -54,6 +54,56 @@ namespace vrt
     return layout_type_id(type_id).value_type;
   }
 
+  Header* Header::from_data(ValueType value_type, const void* data_address)
+  {
+    internal_check(data_address != nullptr, Failure::invalid_value_state);
+
+    Header* result = nullptr;
+    switch (value_type)
+    {
+      case ValueType::object:
+        result = reinterpret_cast<Object*>(const_cast<void*>(data_address)) - 1;
+        break;
+
+      case ValueType::array:
+        result = reinterpret_cast<Array*>(const_cast<void*>(data_address)) - 1;
+        break;
+
+      default:
+        fail(Failure::invalid_value_state);
+    }
+
+    internal_check(
+      (result->magic == Header::magic_value) &&
+        (result->value_type() == value_type) &&
+        (result->data() == data_address),
+      Failure::invalid_value_state);
+
+    return result;
+  }
+
+  void* Header::data()
+  {
+    return const_cast<void*>(static_cast<const Header*>(this)->data());
+  }
+
+  const void* Header::data() const
+  {
+    internal_check(magic == Header::magic_value, Failure::invalid_header_state);
+
+    switch (value_type())
+    {
+      case ValueType::object:
+        return static_cast<const Object*>(this)->fields();
+
+      case ValueType::array:
+        return static_cast<const Array*>(this)->elements();
+
+      default:
+        fail(Failure::invalid_header_state);
+    }
+  }
+
   void Header::reg_inc()
   {
     field_inc();
@@ -103,36 +153,6 @@ namespace vrt
     reference_count--;
     if (reference_count == 0)
       collect_header(this);
-  }
-
-  Header* header_from_payload(ValueType value_type, const void* payload)
-  {
-    return Value{value_type, payload}.header();
-  }
-
-  void* payload_from_header(Header* header)
-  {
-    return const_cast<void*>(
-      payload_from_header(static_cast<const Header*>(header)));
-  }
-
-  const void* payload_from_header(const Header* header)
-  {
-    internal_check(
-      (header != nullptr) && (header->magic == Header::magic_value),
-      Failure::invalid_header_state);
-
-    switch (header->value_type())
-    {
-      case ValueType::object:
-        return static_cast<const Object*>(header)->get_payload();
-
-      case ValueType::array:
-        return static_cast<const Array*>(header)->get_payload();
-
-      default:
-        fail(Failure::invalid_header_state);
-    }
   }
 
   void Header::finalize()

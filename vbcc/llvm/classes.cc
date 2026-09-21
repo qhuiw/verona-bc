@@ -20,14 +20,14 @@ namespace vbcc
         const auto& definition = state.classes.at(index);
         auto class_id = definition / ClassId;
         auto name = node_text(class_id);
-        auto* payload_type = llvm::StructType::create(
-          context, "verona.class." + std::to_string(index) + ".payload");
+        auto* fields_type = llvm::StructType::create(
+          context, "verona.class." + std::to_string(index) + ".fields");
 
         if (!classes
                .emplace(
                  name,
                  ClassState{
-                   NumPrimitiveClasses + index, payload_type, {}, nullptr})
+                   NumPrimitiveClasses + index, fields_type, {}, nullptr})
                .second)
         {
           fail(class_id, "duplicate LLVM class '" + name + "'");
@@ -52,9 +52,9 @@ namespace vbcc
         }
 
         auto& lowered_class = lowered->second;
-        std::vector<llvm::Type*> payload_fields;
+        std::vector<llvm::Type*> storage_fields;
         auto fields = definition / Fields;
-        payload_fields.reserve(fields->size());
+        storage_fields.reserve(fields->size());
         lowered_class.field_types.reserve(fields->size());
 
         for (const auto& field : *fields)
@@ -65,7 +65,7 @@ namespace vbcc
 
           if (field_type->runtime_type == vrt::ValueType::none)
           {
-            payload_fields.push_back(
+            storage_fields.push_back(
               llvm::ArrayType::get(llvm::Type::getInt8Ty(context), 0));
             lowered_class.field_types.push_back(*field_type);
             continue;
@@ -77,11 +77,11 @@ namespace vbcc
             return false;
           }
 
-          payload_fields.push_back(field_type->storage_type);
+          storage_fields.push_back(field_type->storage_type);
           lowered_class.field_types.push_back(*field_type);
         }
 
-        lowered_class.payload_type->setBody(payload_fields, false);
+        lowered_class.fields_type->setBody(storage_fields, false);
       }
 
       return true;
@@ -128,8 +128,8 @@ namespace vbcc
         auto& lowered_class = lowered->second;
         auto fields = definition / Fields;
         auto methods = definition / Methods;
-        auto* payload_layout =
-          module.getDataLayout().getStructLayout(lowered_class.payload_type);
+        auto* fields_layout =
+          module.getDataLayout().getStructLayout(lowered_class.fields_type);
         std::vector<llvm::Constant*> field_metadata;
         field_metadata.reserve(fields->size());
 
@@ -202,7 +202,7 @@ namespace vbcc
             llvm::ConstantStruct::get(
               field_metadata_type,
               {word(
-                 payload_layout->getElementOffset(field_index).getFixedValue()),
+                 fields_layout->getElementOffset(field_index).getFixedValue()),
                word(field_size),
                word(type_id),
                word(static_cast<std::size_t>(field_type.runtime_type))}));
@@ -328,9 +328,9 @@ namespace vbcc
             "verona.class." + std::to_string(index) + ".singleton");
           singleton_storage->setAlignment(llvm::Align(alignof(vrt::Object)));
 
-          auto* payload_offset = llvm::ConstantInt::get(
-            word_type, vrt::Object::singleton_payload_offset());
-          llvm::Constant* singleton_indices[] = {zero, payload_offset};
+          auto* data_offset = llvm::ConstantInt::get(
+            word_type, vrt::Object::singleton_data_offset());
+          llvm::Constant* singleton_indices[] = {zero, data_offset};
           singleton_pointer = llvm::ConstantExpr::getInBoundsGetElementPtr(
             storage_type, singleton_storage, singleton_indices);
           lowered_class.singleton = singleton_pointer;
@@ -340,9 +340,9 @@ namespace vbcc
           class_metadata_type,
           {word(lowered_class.type_id),
            name_pointer,
-           word(payload_layout->getSizeInBytes().getFixedValue()),
+           word(fields_layout->getSizeInBytes().getFixedValue()),
            word(module.getDataLayout()
-                  .getABITypeAlign(lowered_class.payload_type)
+                  .getABITypeAlign(lowered_class.fields_type)
                   .value()),
            word(fields->size()),
            fields_pointer,

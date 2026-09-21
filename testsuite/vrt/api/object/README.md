@@ -7,9 +7,9 @@ effects.
 ## Coverage
 
 - Frame-local `new`, existing-region `heap`, and fresh-region allocation for
-  nominal objects, including initialized payloads and region placement.
+  nominal objects, including initialized fields and region placement.
 - Compiler-emitted class, field, method, singleton, and type metadata.
-- Payload/header conversion, class IDs, retain/release, and collection.
+- Data/header conversion, class IDs, retain/release, and collection.
 - Singleton allocation behavior and method-table lookup.
 - Graph relocation when an object is returned or raised across frame teardown.
 

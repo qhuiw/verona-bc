@@ -10,7 +10,7 @@
 #if defined(__cplusplus)
 namespace vrt
 {
-  /** Runtime representation of a field in a generated class payload. */
+  /** Runtime representation of a field in generated object data. */
   struct Field
   {
     uintptr_t offset;
@@ -30,14 +30,14 @@ namespace vrt
    * Static metadata for one generated class.
    *
    * Generated descriptors for empty classes point singleton at their
-   * compiler-emitted immortal payload. Non-empty classes set it to null.
+   * compiler-emitted immortal data address. Non-empty classes set it to null.
    */
   struct Class
   {
     uintptr_t id;
     const char* name;
-    uintptr_t payload_size;
-    uintptr_t payload_alignment;
+    uintptr_t data_size;
+    uintptr_t data_alignment;
     uintptr_t field_count;
     const Field* fields;
     uintptr_t method_count;
@@ -50,7 +50,7 @@ using vrt_field = vrt::Field;
 using vrt_method = vrt::Method;
 using vrt_class = vrt::Class;
 #else
-/** Runtime representation of a field in a generated class payload. */
+/** Runtime representation of a field in generated object data. */
 typedef struct vrt_field
 {
   uintptr_t offset;
@@ -71,8 +71,8 @@ typedef struct vrt_class
 {
   uintptr_t id;
   const char* name;
-  uintptr_t payload_size;
-  uintptr_t payload_alignment;
+  uintptr_t data_size;
+  uintptr_t data_alignment;
   uintptr_t field_count;
   const vrt_field* fields;
   uintptr_t method_count;
@@ -90,7 +90,7 @@ extern "C"
   /**
    * Allocate and initialize an object in the current frame-local region.
    *
-   * packed_args points at a payload-shaped argument packet: every argument is
+   * packed_args points at a field-layout argument packet: every argument is
    * stored at the offset and with the representation described by the
    * corresponding field metadata. The call consumes the ownership carried
    * by managed values in the packet.
@@ -101,7 +101,7 @@ extern "C"
   /**
    * Allocate in the region containing region_locator.
    *
-   * region_locator is a borrowed object payload pointer and is resolved before
+   * region_locator is a borrowed object data address and is resolved before
    * singleton handling. packed_args has the same form and ownership contract
    * as for vrt_object_new.
    */
@@ -123,23 +123,23 @@ extern "C"
     uintptr_t argc,
     const void* packed_args);
 
-  /** Return the immutable generated class ID for a borrowed object payload. */
-  VRT_EXPORT uintptr_t vrt_object_class_id(const void* payload);
+  /** Return the immutable generated class ID for borrowed object data. */
+  VRT_EXPORT uintptr_t vrt_object_class_id(const void* data_address);
 
   /**
-   * Resolve method_id in the immutable dispatch table for an object payload.
+   * Resolve method_id in the immutable dispatch table for object data.
    *
    * Returns null when the object's class does not provide the method. The
    * returned function metadata has static lifetime and carries no ownership.
    */
   VRT_EXPORT const vrt_func*
-  vrt_object_lookup(const void* payload, uintptr_t method_id);
+  vrt_object_lookup(const void* data_address, uintptr_t method_id);
 
-  /** Add one owning register reference to an object payload. */
-  VRT_EXPORT void vrt_object_retain(void* payload);
+  /** Add one owning register reference to an object data address. */
+  VRT_EXPORT void vrt_object_retain(void* data_address);
 
-  /** Consume one owning register reference to an object payload. */
-  VRT_EXPORT void vrt_object_release(void* payload);
+  /** Consume one owning register reference to an object data address. */
+  VRT_EXPORT void vrt_object_release(void* data_address);
 
   /**
    * Relocate a current-frame-local object so it can be returned safely.
@@ -147,7 +147,7 @@ extern "C"
    * Objects that already outlive the current frame, including immortal
    * singletons and heap-region objects, are left unchanged.
    */
-  VRT_EXPORT void vrt_object_escape(void* payload);
+  VRT_EXPORT void vrt_object_escape(void* data_address);
 
 #if defined(__cplusplus)
 }

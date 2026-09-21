@@ -74,7 +74,7 @@ namespace vbcc
         llvm::IRBuilder<> entry_builder(context);
         entry_builder.SetInsertPoint(&entry, entry.begin());
         auto* arguments = entry_builder.CreateAlloca(
-          cls.payload_type,
+          cls.fields_type,
           nullptr,
           strip_sigil(node_text(statement / LocalId)) + ".object.args");
 
@@ -96,7 +96,7 @@ namespace vbcc
 
           assert(value.value != nullptr);
           auto* address =
-            builder.CreateStructGEP(cls.payload_type, arguments, index);
+            builder.CreateStructGEP(cls.fields_type, arguments, index);
           builder.CreateStore(value.value, address);
         }
 

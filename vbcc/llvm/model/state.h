@@ -35,7 +35,9 @@ namespace vbcc
     struct ClassState
     {
       std::size_t type_id;
-      llvm::StructType* payload_type;
+      // Aggregate memory layout and corresponding individual field
+      // representations, respectively.
+      llvm::StructType* fields_type;
       std::vector<LoweredType> field_types;
       llvm::GlobalVariable* cls = nullptr;
       llvm::Constant* singleton = nullptr;

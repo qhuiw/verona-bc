@@ -35,7 +35,7 @@ int main()
     {vrt::Failure::invalid_thread_state,
      "invalid thread state: thread-local runtime state is inconsistent"},
     {vrt::Failure::invalid_value_state,
-     "invalid value state: the runtime value tag or payload is invalid"},
+     "invalid value state: the runtime value tag or data address is invalid"},
     {vrt::Failure::invalid_write,
      "invalid write: the write barrier rejected an ownership or region "
      "transition"},

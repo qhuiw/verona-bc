@@ -10,7 +10,7 @@ namespace vrt
 {
   struct Region;
 
-  /** State shared by every managed VRT allocation. */
+  /** State shared by every region-managed VRT allocation. */
   struct Header
   {
   private:
@@ -52,6 +52,11 @@ namespace vrt
       return type_id;
     }
 
+    static Header* from_data(ValueType value_type, const void* data_address);
+
+    void* data();
+    const void* data() const;
+
     ValueType value_type() const;
 
     void finalize();
@@ -63,11 +68,4 @@ namespace vrt
   };
 
   bool is_header_type(ValueType value_type);
-
-  /** Recover a managed allocation header from its exposed payload pointer. */
-  Header* header_from_payload(ValueType value_type, const void* payload);
-
-  /** Recover the exposed payload pointer for a managed allocation header. */
-  void* payload_from_header(Header* header);
-  const void* payload_from_header(const Header* header);
 }

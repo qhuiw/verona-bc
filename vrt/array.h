@@ -63,24 +63,14 @@ namespace vrt
       return element_value_type;
     }
 
-    void* get_pointer()
+    void* elements()
     {
       return this + 1;
     }
 
-    const void* get_pointer() const
+    const void* elements() const
     {
       return this + 1;
-    }
-
-    void* get_payload()
-    {
-      return get_pointer();
-    }
-
-    const void* get_payload() const
-    {
-      return get_pointer();
     }
 
     /** Return the address containing the encoded value at index. */
@@ -109,10 +99,10 @@ namespace vrt
 
       for (uintptr_t index = 0; index < size; index++)
       {
-        void* payload = nullptr;
-        std::memcpy(&payload, load(index), sizeof(payload));
-        if (payload != nullptr)
-          function(Value{element_value_type, payload}.header());
+        void* data_address = nullptr;
+        std::memcpy(&data_address, load(index), sizeof(data_address));
+        if (data_address != nullptr)
+          function(Value{element_value_type, data_address}.header());
       }
     }
 

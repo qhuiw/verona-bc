@@ -17,38 +17,38 @@ namespace
 {
   vrt::Header* load_header(vrt::ValueType value_type, const void* source)
   {
-    void* payload = nullptr;
-    std::memcpy(&payload, source, sizeof(payload));
-    if (payload == nullptr)
+    void* data_address = nullptr;
+    std::memcpy(&data_address, source, sizeof(data_address));
+    if (data_address == nullptr)
       return nullptr;
 
-    return vrt::header_from_payload(value_type, payload);
+    return vrt::Header::from_data(value_type, data_address);
   }
 
   void store_header(void* target, vrt::Header* header)
   {
-    auto* payload = vrt::payload_from_header(header);
-    std::memcpy(target, &payload, sizeof(payload));
+    auto* data_address = header->data();
+    std::memcpy(target, &data_address, sizeof(data_address));
   }
 
   void clear_header(void* target)
   {
-    void* payload = nullptr;
-    std::memcpy(target, &payload, sizeof(payload));
+    void* data_address = nullptr;
+    std::memcpy(target, &data_address, sizeof(data_address));
   }
 
   template<typename F>
   void trace_object(vrt::Object* object, F&& function)
   {
     auto* cls = object->cls;
-    auto* payload = static_cast<std::byte*>(object->get_payload());
+    auto* fields = static_cast<std::byte*>(object->fields());
     for (uintptr_t index = 0; index < cls->field_count; index++)
     {
       const auto& field = cls->fields[index];
       if (!vrt::is_header_type(field.value_type))
         continue;
 
-      auto* child = load_header(field.value_type, payload + field.offset);
+      auto* child = load_header(field.value_type, fields + field.offset);
       if (child != nullptr)
         function(child);
     }

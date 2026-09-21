@@ -29,38 +29,38 @@ namespace
   constexpr uintptr_t value_class_id = 0x101;
   constexpr uintptr_t holder_class_id = 0x102;
 
-  struct ValuePayload
+  struct ValueFields
   {
     uint64_t value;
   };
 
-  struct HolderPayload
+  struct HolderFields
   {
     void* value;
     uint32_t tag;
   };
 
   const vrt::Field value_fields[] = {
-    {offsetof(ValuePayload, value),
-     sizeof(ValuePayload::value),
+    {offsetof(ValueFields, value),
+     sizeof(ValueFields::value),
      0,
      vrt::ValueType::scalar}};
 
   const vrt::Field holder_fields[] = {
-    {offsetof(HolderPayload, value),
-     sizeof(HolderPayload::value),
+    {offsetof(HolderFields, value),
+     sizeof(HolderFields::value),
      value_class_id,
      vrt::ValueType::object},
-    {offsetof(HolderPayload, tag),
-     sizeof(HolderPayload::tag),
+    {offsetof(HolderFields, tag),
+     sizeof(HolderFields::tag),
      0,
      vrt::ValueType::scalar}};
 
   vrt::Class value_class{
     value_class_id,
     "Value",
-    sizeof(ValuePayload),
-    alignof(ValuePayload),
+    sizeof(ValueFields),
+    alignof(ValueFields),
     1,
     value_fields,
     0,
@@ -70,8 +70,8 @@ namespace
   vrt::Class holder_class{
     holder_class_id,
     "Holder",
-    sizeof(HolderPayload),
-    alignof(HolderPayload),
+    sizeof(HolderFields),
+    alignof(HolderFields),
     2,
     holder_fields,
     0,
@@ -83,10 +83,10 @@ namespace
     {holder_class_id, vrt::ValueType::object, sizeof(void*), 0}};
   const vrt::Program program{2, types, 0, nullptr};
 
-  vrt::Object* object_from_payload(void* payload)
+  vrt::Object* object_from_data(void* data_address)
   {
     return static_cast<vrt::Object*>(
-      vrt::header_from_payload(vrt::ValueType::object, payload));
+      vrt::Header::from_data(vrt::ValueType::object, data_address));
   }
 
 }
@@ -106,7 +106,10 @@ int main()
     !(child_location > root_location) || !(child_location >= root_location) ||
     (root_location == child_location) ||
     (vrt::Location::from_raw(child_location.raw()) != child_location) ||
-    !vrt::Location::immortal().is_immortal())
+    !vrt::Location::immutable().is_immutable() ||
+    vrt::Location::immutable().is_scc_ptr() ||
+    !vrt::Location::immortal().is_immortal() ||
+    vrt::Location::immortal().is_immutable())
     return 15;
 
   const vrt::Function root_function{1, "root", nullptr};
@@ -130,9 +133,9 @@ int main()
   // Escaping a return value relocates it from the callee's frame-local
   // region into the caller's region before callee teardown.
   auto* child_frame = vrt_frame_enter(&child_function);
-  ValuePayload escaped_args{12};
+  ValueFields escaped_args{12};
   auto* escaped = vrt_object_new(&value_class, 1, &escaped_args);
-  auto* escaped_object = object_from_payload(escaped);
+  auto* escaped_object = object_from_data(escaped);
   auto* callee_region = child_frame->region;
   auto child_frame_id = vrt_frame_id(child_frame);
   if (
@@ -144,10 +147,17 @@ int main()
     return 2;
 
   auto region_location = escaped_object->location();
+  auto pending_location = region_location.pending();
+  auto scc_location = vrt::Location::scc_ptr(escaped_object);
   if (
     !region_location.is_region() ||
     (region_location.to_region() != callee_region) ||
-    (region_location.raw() != reinterpret_cast<uintptr_t>(callee_region)))
+    (region_location.raw() != reinterpret_cast<uintptr_t>(callee_region)) ||
+    !pending_location.is_pending() || pending_location.is_region() ||
+    (pending_location.unpending() != region_location) ||
+    !scc_location.is_scc_ptr() || !scc_location.is_immutable() ||
+    scc_location.is_region() || (scc_location.scc_target() != escaped_object) ||
+    (vrt::Location::from_raw(scc_location.raw()) != scc_location))
     return 17;
 
   vrt_object_escape(escaped);
@@ -161,7 +171,7 @@ int main()
   vrt_frame_leave();
   if (
     (vrt_thread_current_frame() != root_frame) ||
-    (static_cast<ValuePayload*>(escaped)->value != 12) ||
+    (static_cast<ValueFields*>(escaped)->value != 12) ||
     (escaped_object->region() != frame_region) ||
     !frame_region->contains(escaped_object))
     return 4;
@@ -185,9 +195,9 @@ int main()
       (vrt_frame_id(intermediate_frame) != child_frame_id))
       return 16;
 
-    ValuePayload raised_args{13};
+    ValueFields raised_args{13};
     auto* raised = vrt_object_new(&value_class, 1, &raised_args);
-    auto* raised_object = object_from_payload(raised);
+    auto* raised_object = object_from_data(raised);
     auto* intermediate_region = intermediate_frame->region;
     auto* raise_frame = vrt_frame_enter(&child_function);
     if (
@@ -205,11 +215,11 @@ int main()
 
   auto* raised = reinterpret_cast<void*>(
     static_cast<uintptr_t>(vrt_frame_take_raised_value()));
-  auto* raised_object = object_from_payload(raised);
+  auto* raised_object = object_from_data(raised);
   if (
     (vrt_thread_current_frame() != root_frame) ||
     (raised_object->region() != frame_region) ||
-    (static_cast<ValuePayload*>(raised)->value != 13) ||
+    (static_cast<ValueFields*>(raised)->value != 13) ||
     !frame_region->contains(raised_object))
     return 9;
 
@@ -219,16 +229,16 @@ int main()
 
   // A tailcall preserves the frame-local region. Leaving the reused frame
   // then drops its fields, including external roots into heap regions.
-  ValuePayload cleanup_child_args{15};
+  ValueFields cleanup_child_args{15};
   auto* cleanup_child = vrt_object_region(
     vrt::RegionType::rc, &value_class, 1, &cleanup_child_args);
-  auto* cleanup_child_object = object_from_payload(cleanup_child);
+  auto* cleanup_child_object = object_from_data(cleanup_child);
   auto* cleanup_child_region = cleanup_child_object->region();
   vrt_object_retain(cleanup_child);
-  HolderPayload frame_cleanup_args{cleanup_child, 18};
+  HolderFields frame_cleanup_args{cleanup_child, 18};
   auto* frame_cleanup = vrt_object_new(&holder_class, 2, &frame_cleanup_args);
   if (
-    (object_from_payload(frame_cleanup)->region() != frame_region) ||
+    (object_from_data(frame_cleanup)->region() != frame_region) ||
     (frame_region->header_count() != 1) ||
     (cleanup_child_region->stack_reference_count != 2))
     return 11;
@@ -247,7 +257,7 @@ int main()
     (vrt_thread_current_frame() != nullptr) ||
     (cleanup_child_region->stack_reference_count != 1) ||
     cleanup_child_region->has_parent() ||
-    (static_cast<ValuePayload*>(cleanup_child)->value != 15))
+    (static_cast<ValueFields*>(cleanup_child)->value != 15))
     return 13;
 
   vrt_object_release(cleanup_child);

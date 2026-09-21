@@ -27,7 +27,7 @@ namespace
     nullptr,
     0,
     nullptr,
-    singleton_storage + vrt::Object::singleton_payload_offset()};
+    singleton_storage + vrt::Object::singleton_data_offset()};
 
   const vrt::TypeInfo types[] = {
     {none_type_id, vrt::ValueType::none, 0, 0},
@@ -55,14 +55,14 @@ int main()
     (object_layout.storage_size != sizeof(void*)))
     return 1;
 
-  auto* singleton = static_cast<vrt::Object*>(vrt::header_from_payload(
-    vrt::ValueType::object, singleton_class.singleton));
+  auto* singleton = static_cast<vrt::Object*>(
+    vrt::Header::from_data(vrt::ValueType::object, singleton_class.singleton));
   if (
     (singleton->cls != &singleton_class) ||
     (singleton->get_type_id() != singleton_class_id) ||
     (singleton->value_type() != vrt::ValueType::object) ||
     (singleton->location() != vrt::Location::immortal()) ||
-    (singleton->get_payload() != singleton_class.singleton) ||
+    (singleton->fields() != singleton_class.singleton) ||
     (singleton->reference_count != 1) ||
     (singleton->allocation != singleton_storage) || singleton->finalizing)
     return 2;
@@ -76,11 +76,11 @@ int main()
   if (vrt::get_exit_code() != 0)
     return 4;
 
-  auto* payload = static_cast<std::byte*>(singleton_class.singleton);
-  *payload = std::byte{0x5a};
+  auto* data = static_cast<std::byte*>(singleton_class.singleton);
+  *data = std::byte{0x5a};
   set_exit_code(9);
   vrt_invocation_begin();
-  if ((vrt::get_exit_code() != 0) || (*payload != std::byte{0x5a}))
+  if ((vrt::get_exit_code() != 0) || (*data != std::byte{0x5a}))
     return 5;
 
   vrt_thread_deinit();

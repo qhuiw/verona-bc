@@ -14,11 +14,11 @@ namespace vrt
   {
   private:
     ValueType value_type;
-    const void* payload;
+    const void* data_address;
 
   public:
-    Value(ValueType value_type, const void* payload)
-    : value_type(value_type), payload(payload)
+    Value(ValueType value_type, const void* data_address)
+    : value_type(value_type), data_address(data_address)
     {}
 
     ValueType type() const

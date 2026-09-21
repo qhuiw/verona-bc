@@ -24,38 +24,38 @@ namespace
   constexpr uintptr_t holder_class_id = 0x102;
   constexpr uintptr_t scalar_array_type_id = 0x201;
 
-  struct ValuePayload
+  struct ValueFields
   {
     uint64_t value;
   };
 
-  struct HolderPayload
+  struct HolderFields
   {
     void* value;
     uint32_t tag;
   };
 
   const vrt::Field value_fields[] = {
-    {offsetof(ValuePayload, value),
-     sizeof(ValuePayload::value),
+    {offsetof(ValueFields, value),
+     sizeof(ValueFields::value),
      0,
      vrt::ValueType::scalar}};
 
   const vrt::Field holder_fields[] = {
-    {offsetof(HolderPayload, value),
-     sizeof(HolderPayload::value),
+    {offsetof(HolderFields, value),
+     sizeof(HolderFields::value),
      value_class_id,
      vrt::ValueType::object},
-    {offsetof(HolderPayload, tag),
-     sizeof(HolderPayload::tag),
+    {offsetof(HolderFields, tag),
+     sizeof(HolderFields::tag),
      0,
      vrt::ValueType::scalar}};
 
   vrt::Class value_class{
     value_class_id,
     "Value",
-    sizeof(ValuePayload),
-    alignof(ValuePayload),
+    sizeof(ValueFields),
+    alignof(ValueFields),
     1,
     value_fields,
     0,
@@ -65,8 +65,8 @@ namespace
   vrt::Class holder_class{
     holder_class_id,
     "Holder",
-    sizeof(HolderPayload),
-    alignof(HolderPayload),
+    sizeof(HolderFields),
+    alignof(HolderFields),
     2,
     holder_fields,
     0,
@@ -83,10 +83,10 @@ namespace
      scalar_type_id}};
   const vrt::Program program{4, types, 0, nullptr};
 
-  vrt::Object* object_from_payload(void* payload)
+  vrt::Object* object_from_data(void* data_address)
   {
     return static_cast<vrt::Object*>(
-      vrt::header_from_payload(vrt::ValueType::object, payload));
+      vrt::Header::from_data(vrt::ValueType::object, data_address));
   }
 }
 
@@ -118,22 +118,22 @@ int main()
 
   auto* frame_region = root_frame->region;
 
-  auto* frame_array_payload = vrt_array_new(scalar_array_type_id, 2);
+  auto* frame_array_elements = vrt_array_new(scalar_array_type_id, 2);
   auto* frame_array = static_cast<vrt::Array*>(
-    vrt::header_from_payload(vrt::ValueType::array, frame_array_payload));
+    vrt::Header::from_data(vrt::ValueType::array, frame_array_elements));
   if (
     (frame_array->region() != frame_region) ||
     !frame_region->contains(frame_array) || (frame_region->header_count() != 1))
     return 18;
 
-  vrt_array_release(frame_array_payload);
+  vrt_array_release(frame_array_elements);
   if (frame_region->header_count() != 0)
     return 19;
 
-  auto* rc_array_payload =
+  auto* rc_array_elements =
     vrt_array_region(vrt::RegionType::rc, scalar_array_type_id, 2);
   auto* rc_array = static_cast<vrt::Array*>(
-    vrt::header_from_payload(vrt::ValueType::array, rc_array_payload));
+    vrt::Header::from_data(vrt::ValueType::array, rc_array_elements));
   auto* rc_array_region = rc_array->region();
   if (
     (rc_array_region == nullptr) || rc_array_region->is_frame_local() ||
@@ -144,12 +144,12 @@ int main()
     (rc_array_region->header_count() != 1) ||
     !rc_array_region->contains(rc_array))
     return 20;
-  vrt_array_release(rc_array_payload);
+  vrt_array_release(rc_array_elements);
 
-  auto* arena_array_payload =
+  auto* arena_array_elements =
     vrt_array_region(vrt::RegionType::arena, scalar_array_type_id, 2);
   auto* arena_array = static_cast<vrt::Array*>(
-    vrt::header_from_payload(vrt::ValueType::array, arena_array_payload));
+    vrt::Header::from_data(vrt::ValueType::array, arena_array_elements));
   auto* arena_array_region = arena_array->region();
   if (
     (arena_array_region == nullptr) || arena_array_region->is_frame_local() ||
@@ -159,21 +159,21 @@ int main()
     (arena_array_region->header_count() != 1) ||
     !arena_array_region->contains(arena_array))
     return 21;
-  vrt_array_release(arena_array_payload);
+  vrt_array_release(arena_array_elements);
 
   // Region initialization drags a frame-local object graph into the new RC
   // region. The argument ownership becomes the Holder field ownership.
-  ValuePayload dragged_args{84};
+  ValueFields dragged_args{84};
   auto* dragged_value = vrt_object_new(&value_class, 1, &dragged_args);
-  auto* dragged_object = object_from_payload(dragged_value);
-  HolderPayload dragged_holder_args{dragged_value, 7};
+  auto* dragged_object = object_from_data(dragged_value);
+  HolderFields dragged_holder_args{dragged_value, 7};
   auto* dragged_holder = vrt_object_region(
     vrt::RegionType::rc, &holder_class, 2, &dragged_holder_args);
-  auto* dragged_holder_object = object_from_payload(dragged_holder);
+  auto* dragged_holder_object = object_from_data(dragged_holder);
   auto* dragged_region = dragged_holder_object->region();
-  auto* dragged_payload = static_cast<HolderPayload*>(dragged_holder);
+  auto* dragged_fields = static_cast<HolderFields*>(dragged_holder);
   if (
-    (dragged_payload->value != dragged_value) || (dragged_payload->tag != 7) ||
+    (dragged_fields->value != dragged_value) || (dragged_fields->tag != 7) ||
     (dragged_object->region() != dragged_region) ||
     frame_region->contains(dragged_object) ||
     (dragged_region->type != vrt::RegionType::rc) ||
@@ -190,27 +190,27 @@ int main()
 
   // Heap reuses the locator's region. Releasing an ordinary RC object
   // collects it while the region and its entry object remain live.
-  ValuePayload rc_root_args{1};
+  ValueFields rc_root_args{1};
   auto* rc_root =
     vrt_object_region(vrt::RegionType::rc, &value_class, 1, &rc_root_args);
-  auto* rc_root_object = object_from_payload(rc_root);
+  auto* rc_root_object = object_from_data(rc_root);
   auto* rc_region = rc_root_object->region();
-  ValuePayload rc_heap_args{2};
+  ValueFields rc_heap_args{2};
   auto* rc_heap = vrt_object_heap(rc_root, &value_class, 1, &rc_heap_args);
-  auto* rc_heap_object = object_from_payload(rc_heap);
-  auto* rc_heap_array_payload =
+  auto* rc_heap_object = object_from_data(rc_heap);
+  auto* rc_heap_array_elements =
     vrt_array_heap(rc_root, scalar_array_type_id, 2);
   auto* rc_heap_array = static_cast<vrt::Array*>(
-    vrt::header_from_payload(vrt::ValueType::array, rc_heap_array_payload));
+    vrt::Header::from_data(vrt::ValueType::array, rc_heap_array_elements));
   if (
     (rc_heap_object->region() != rc_region) ||
     (rc_heap_array->region() != rc_region) ||
-    (static_cast<ValuePayload*>(rc_heap)->value != 2) ||
+    (static_cast<ValueFields*>(rc_heap)->value != 2) ||
     (rc_region->stack_reference_count != 3) ||
     (rc_region->header_count() != 3) || !rc_region->contains(rc_heap_array))
     return 5;
 
-  vrt_array_release(rc_heap_array_payload);
+  vrt_array_release(rc_heap_array_elements);
   if (
     (rc_region->stack_reference_count != 2) ||
     (rc_region->header_count() != 2) || rc_region->contains(rc_heap_array))
@@ -226,19 +226,19 @@ int main()
 
   // Arena releases consume stack ownership without collecting individual
   // objects; releasing the final region root tears the whole arena down.
-  ValuePayload arena_root_args{3};
+  ValueFields arena_root_args{3};
   auto* arena_root = vrt_object_region(
     vrt::RegionType::arena, &value_class, 1, &arena_root_args);
-  auto* arena_root_object = object_from_payload(arena_root);
+  auto* arena_root_object = object_from_data(arena_root);
   auto* arena_region = arena_root_object->region();
-  ValuePayload arena_heap_args{4};
+  ValueFields arena_heap_args{4};
   auto* arena_heap =
     vrt_object_heap(arena_root, &value_class, 1, &arena_heap_args);
-  auto* arena_heap_object = object_from_payload(arena_heap);
-  auto* arena_heap_array_payload =
+  auto* arena_heap_object = object_from_data(arena_heap);
+  auto* arena_heap_array_elements =
     vrt_array_heap(arena_root, scalar_array_type_id, 2);
   auto* arena_heap_array = static_cast<vrt::Array*>(
-    vrt::header_from_payload(vrt::ValueType::array, arena_heap_array_payload));
+    vrt::Header::from_data(vrt::ValueType::array, arena_heap_array_elements));
   if (
     !arena_region->is_arena() ||
     (arena_region->type != vrt::RegionType::arena) ||
@@ -249,7 +249,7 @@ int main()
     (arena_region->header_count() != 3))
     return 7;
 
-  vrt_array_release(arena_heap_array_payload);
+  vrt_array_release(arena_heap_array_elements);
   if (
     (arena_region->stack_reference_count != 2) ||
     (arena_region->header_count() != 3) ||
@@ -268,17 +268,17 @@ int main()
 
   // Moving a heap-region entry point into a frame-local object leaves that
   // region externally rooted by the field until the frame-local holder dies.
-  ValuePayload frame_child_args{5};
+  ValueFields frame_child_args{5};
   auto* frame_child =
     vrt_object_region(vrt::RegionType::rc, &value_class, 1, &frame_child_args);
-  auto* frame_child_object = object_from_payload(frame_child);
+  auto* frame_child_object = object_from_data(frame_child);
   auto* frame_child_region = frame_child_object->region();
-  HolderPayload frame_holder_args{frame_child, 8};
+  HolderFields frame_holder_args{frame_child, 8};
   auto* frame_holder = vrt_object_new(&holder_class, 2, &frame_holder_args);
-  auto* frame_holder_object = object_from_payload(frame_holder);
+  auto* frame_holder_object = object_from_data(frame_holder);
   if (
     (frame_holder_object->region() != frame_region) ||
-    (static_cast<HolderPayload*>(frame_holder)->value != frame_child) ||
+    (static_cast<HolderFields*>(frame_holder)->value != frame_child) ||
     (frame_child_region->stack_reference_count != 1) ||
     frame_child_region->has_parent())
     return 9;
@@ -289,22 +289,22 @@ int main()
 
   // A moved child region is parented at its entry object. With no remaining
   // external child reference, parent release owns both regions' teardown.
-  ValuePayload child_args{6};
+  ValueFields child_args{6};
   auto* child =
     vrt_object_region(vrt::RegionType::rc, &value_class, 1, &child_args);
-  auto* child_object = object_from_payload(child);
+  auto* child_object = object_from_data(child);
   auto* child_region = child_object->region();
-  HolderPayload parent_args{child, 9};
+  HolderFields parent_args{child, 9};
   auto* parent =
     vrt_object_region(vrt::RegionType::rc, &holder_class, 2, &parent_args);
-  auto* parent_object = object_from_payload(parent);
+  auto* parent_object = object_from_data(parent);
   auto* parent_region = parent_object->region();
   if (
     (child_region->parent != parent_region) ||
     (child_region->entry_point != child_object) ||
     (child_region->stack_reference_count != 0) ||
     (parent_region->stack_reference_count != 1) ||
-    (static_cast<HolderPayload*>(parent)->value != child))
+    (static_cast<HolderFields*>(parent)->value != child))
     return 11;
 
   vrt_object_release(parent);
@@ -312,16 +312,16 @@ int main()
   // An externally-retained child propagates its non-zero stack-reference
   // state into the parent. Consuming that external reference propagates the
   // transition back down while the parent field keeps the child alive.
-  ValuePayload retained_child_args{10};
+  ValueFields retained_child_args{10};
   auto* retained_child = vrt_object_region(
     vrt::RegionType::rc, &value_class, 1, &retained_child_args);
-  auto* retained_child_object = object_from_payload(retained_child);
+  auto* retained_child_object = object_from_data(retained_child);
   auto* retained_child_region = retained_child_object->region();
   vrt_object_retain(retained_child);
-  HolderPayload retained_parent_args{retained_child, 11};
+  HolderFields retained_parent_args{retained_child, 11};
   auto* retained_parent = vrt_object_region(
     vrt::RegionType::rc, &holder_class, 2, &retained_parent_args);
-  auto* retained_parent_object = object_from_payload(retained_parent);
+  auto* retained_parent_object = object_from_data(retained_parent);
   auto* retained_parent_region = retained_parent_object->region();
   if (
     (retained_child_region->parent != retained_parent_region) ||
@@ -345,16 +345,16 @@ int main()
   // remains live. Clearing the child's parent can drop the parent's last
   // propagated stack reference, so collection must guard against re-entrant
   // region destruction until the Holder storage is gone.
-  ValuePayload guarded_child_args{16};
+  ValueFields guarded_child_args{16};
   auto* guarded_child = vrt_object_region(
     vrt::RegionType::rc, &value_class, 1, &guarded_child_args);
-  auto* guarded_child_object = object_from_payload(guarded_child);
+  auto* guarded_child_object = object_from_data(guarded_child);
   auto* guarded_child_region = guarded_child_object->region();
   vrt_object_retain(guarded_child);
-  HolderPayload guarded_parent_args{guarded_child, 17};
+  HolderFields guarded_parent_args{guarded_child, 17};
   auto* guarded_parent = vrt_object_region(
     vrt::RegionType::rc, &holder_class, 2, &guarded_parent_args);
-  auto* guarded_parent_region = object_from_payload(guarded_parent)->region();
+  auto* guarded_parent_region = object_from_data(guarded_parent)->region();
   if (
     (guarded_child_region->parent != guarded_parent_region) ||
     (guarded_child_region->stack_reference_count != 1) ||
@@ -369,22 +369,22 @@ int main()
     guarded_child_region->destroying || guarded_child_region->is_finalizing() ||
     (guarded_child_region->header_count() != 1) ||
     !guarded_child_region->contains(guarded_child_object) ||
-    (static_cast<ValuePayload*>(guarded_child)->value != 16))
+    (static_cast<ValueFields*>(guarded_child)->value != 16))
     return 15;
 
   vrt_object_release(guarded_child);
   if (frame_region->header_count() != 0)
     return 16;
 
-  ValuePayload cleanup_child_args{15};
+  ValueFields cleanup_child_args{15};
   auto* cleanup_child = vrt_object_region(
     vrt::RegionType::rc, &value_class, 1, &cleanup_child_args);
-  auto* cleanup_child_region = object_from_payload(cleanup_child)->region();
+  auto* cleanup_child_region = object_from_data(cleanup_child)->region();
   vrt_object_retain(cleanup_child);
-  HolderPayload frame_cleanup_args{cleanup_child, 18};
+  HolderFields frame_cleanup_args{cleanup_child, 18};
   auto* frame_cleanup = vrt_object_new(&holder_class, 2, &frame_cleanup_args);
   if (
-    (object_from_payload(frame_cleanup)->region() != frame_region) ||
+    (object_from_data(frame_cleanup)->region() != frame_region) ||
     (frame_region->header_count() != 1) ||
     (cleanup_child_region->stack_reference_count != 2))
     return 24;
@@ -402,7 +402,7 @@ int main()
     (vrt_thread_current_frame() != nullptr) ||
     (cleanup_child_region->stack_reference_count != 1) ||
     cleanup_child_region->has_parent() ||
-    (static_cast<ValuePayload*>(cleanup_child)->value != 15))
+    (static_cast<ValueFields*>(cleanup_child)->value != 15))
     return 26;
 
   vrt_object_release(cleanup_child);

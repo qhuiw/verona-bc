@@ -58,11 +58,10 @@ _Static_assert(VRT_TYPE_IS(((vrt_class*)0)->id, uintptr_t), "class id ABI");
 _Static_assert(
   VRT_TYPE_IS(((vrt_class*)0)->name, const char*), "class name ABI");
 _Static_assert(
-  VRT_TYPE_IS(((vrt_class*)0)->payload_size, uintptr_t),
-  "class payload size ABI");
+  VRT_TYPE_IS(((vrt_class*)0)->data_size, uintptr_t), "class data size ABI");
 _Static_assert(
-  VRT_TYPE_IS(((vrt_class*)0)->payload_alignment, uintptr_t),
-  "class payload alignment ABI");
+  VRT_TYPE_IS(((vrt_class*)0)->data_alignment, uintptr_t),
+  "class data alignment ABI");
 _Static_assert(
   VRT_TYPE_IS(((vrt_class*)0)->field_count, uintptr_t),
   "class field count ABI");

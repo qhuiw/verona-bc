@@ -10,7 +10,7 @@ namespace vrt
 {
   struct Region;
 
-  /** Runtime object stored immediately before its exposed payload. */
+  /** Runtime object stored immediately before its exposed fields. */
   struct Object final : Header
   {
     const Class* cls = nullptr;
@@ -20,14 +20,14 @@ namespace vrt
       Region* region, const Class* cls, std::byte* allocation, bool immortal);
 
   public:
-    static constexpr size_t singleton_payload_offset()
+    static constexpr size_t singleton_data_offset()
     {
       return sizeof(Object);
     }
 
     static constexpr size_t singleton_storage_size()
     {
-      return singleton_payload_offset() + 1;
+      return singleton_data_offset() + 1;
     }
 
     static size_t size_of(const Class* cls);
@@ -41,12 +41,12 @@ namespace vrt
     void finalize();
     void destroy_storage();
 
-    void* get_payload()
+    void* fields()
     {
       return this + 1;
     }
 
-    const void* get_payload() const
+    const void* fields() const
     {
       return this + 1;
     }

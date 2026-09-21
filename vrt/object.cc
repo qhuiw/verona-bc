@@ -44,7 +44,7 @@ namespace
       vrt::layout_type_id(cls->id).value_type == vrt::ValueType::object,
       vrt::Failure::invalid_object_state);
 
-    auto alignment = cls->payload_alignment;
+    auto alignment = cls->data_alignment;
     if (alignment == 0)
       alignment = 1;
 
@@ -61,8 +61,8 @@ namespace
       const auto& field = cls->fields[index];
       internal_check(
         is_supported_value_type(field.value_type) &&
-          (field.offset <= cls->payload_size) &&
-          (field.size <= (cls->payload_size - field.offset)) &&
+          (field.offset <= cls->data_size) &&
+          (field.size <= (cls->data_size - field.offset)) &&
           (!vrt::is_header_type(field.value_type) ||
            (field.size == sizeof(void*))),
         vrt::Failure::invalid_object_state);
@@ -114,19 +114,18 @@ namespace vrt
     validate_class(cls);
 
     const auto alignment =
-      std::max<uintptr_t>(cls->payload_alignment, alignof(Object));
-    const auto payload_size =
-      std::max<uintptr_t>(cls->payload_size, uintptr_t{1});
+      std::max<uintptr_t>(cls->data_alignment, alignof(Object));
+    const auto data_size = std::max<uintptr_t>(cls->data_size, uintptr_t{1});
     constexpr auto fixed_prefix = sizeof(Object);
 
     internal_check(
       ((alignment - 1) <=
        (std::numeric_limits<uintptr_t>::max() - fixed_prefix)) &&
-        (payload_size <= (std::numeric_limits<uintptr_t>::max() - fixed_prefix -
-                          (alignment - 1))),
+        (data_size <= (std::numeric_limits<uintptr_t>::max() - fixed_prefix -
+                       (alignment - 1))),
       Failure::invalid_object_state);
 
-    return fixed_prefix + (alignment - 1) + payload_size;
+    return fixed_prefix + (alignment - 1) + data_size;
   }
 
   Object* Object::create(
@@ -142,7 +141,7 @@ namespace vrt
       Failure::invalid_object_state);
 
     const auto alignment =
-      std::max<uintptr_t>(cls->payload_alignment, alignof(Object));
+      std::max<uintptr_t>(cls->data_alignment, alignof(Object));
     constexpr auto fixed_prefix = sizeof(Object);
 
     const auto unaligned =
@@ -151,13 +150,12 @@ namespace vrt
       unaligned <= (std::numeric_limits<uintptr_t>::max() - (alignment - 1)),
       Failure::invalid_object_state);
 
-    const auto payload_address =
-      (unaligned + (alignment - 1)) & ~(alignment - 1);
-    auto* payload = reinterpret_cast<std::byte*>(payload_address);
-    auto* object_storage = payload - sizeof(Object);
+    const auto data_address = (unaligned + (alignment - 1)) & ~(alignment - 1);
+    auto* fields = reinterpret_cast<std::byte*>(data_address);
+    auto* object_storage = fields - sizeof(Object);
     auto* object =
       ::new (object_storage) Object{region, cls, allocation, immortal};
-    std::memset(payload, 0, cls->payload_size);
+    std::memset(fields, 0, cls->data_size);
 
     return object;
   }
@@ -171,7 +169,7 @@ namespace vrt
 
     validate_arguments(cls, argc, packed_args);
 
-    auto* target = static_cast<std::byte*>(get_payload());
+    auto* target = static_cast<std::byte*>(fields());
     auto* source = static_cast<const std::byte*>(packed_args);
     for (uintptr_t index = 0; index < cls->field_count; index++)
     {
@@ -189,13 +187,13 @@ namespace vrt
       return;
 
     finalizing = true;
-    auto* payload = static_cast<std::byte*>(get_payload());
+    auto* fields = static_cast<std::byte*>(this->fields());
 
     for (uintptr_t index = 0; index < cls->field_count; index++)
     {
       const auto& field = cls->fields[index];
       if (is_header_type(field.value_type))
-        writebarrier::drop(region(), field, payload + field.offset);
+        writebarrier::drop(region(), field, fields + field.offset);
     }
   }
 
@@ -222,7 +220,7 @@ void vrt::init_singleton(void* storage, const Class* cls)
   auto* object =
     Object::create(static_cast<std::byte*>(storage), cls, nullptr, true);
   internal_check(
-    object->get_payload() == cls->singleton, Failure::invalid_object_state);
+    object->fields() == cls->singleton, Failure::invalid_object_state);
 }
 
 extern "C" VRT_EXPORT void*
@@ -237,7 +235,7 @@ vrt_object_new(const vrt::Class* cls, uintptr_t argc, const void* packed_args)
   return vrt::current_frame_region()
     ->object(cls)
     ->init(argc, packed_args)
-    .get_payload();
+    .fields();
 }
 
 extern "C" VRT_EXPORT void* vrt_object_heap(
@@ -256,7 +254,7 @@ extern "C" VRT_EXPORT void* vrt_object_heap(
     return cls->singleton;
 
   validate_arguments(cls, argc, packed_args);
-  return region->object(cls)->init(argc, packed_args).get_payload();
+  return region->object(cls)->init(argc, packed_args).fields();
 }
 
 extern "C" VRT_EXPORT void* vrt_object_region(
@@ -271,19 +269,21 @@ extern "C" VRT_EXPORT void* vrt_object_region(
 
   validate_arguments(cls, argc, packed_args);
   auto* region = vrt::Region::create(region_type);
-  return region->object(cls)->init(argc, packed_args).get_payload();
+  return region->object(cls)->init(argc, packed_args).fields();
 }
 
-extern "C" VRT_EXPORT uintptr_t vrt_object_class_id(const void* payload)
+extern "C" VRT_EXPORT uintptr_t vrt_object_class_id(const void* data_address)
 {
-  return vrt::Value{vrt::ValueType::object, payload}.header()->get_type_id();
+  return vrt::Value{vrt::ValueType::object, data_address}
+    .header()
+    ->get_type_id();
 }
 
 extern "C" VRT_EXPORT const vrt::Function*
-vrt_object_lookup(const void* payload, uintptr_t method_id)
+vrt_object_lookup(const void* data_address, uintptr_t method_id)
 {
   const auto* object = static_cast<vrt::Object*>(
-    vrt::Value{vrt::ValueType::object, payload}.header());
+    vrt::Value{vrt::ValueType::object, data_address}.header());
   const auto* cls = object->cls;
   uintptr_t first = 0;
   uintptr_t last = cls->method_count;
@@ -305,17 +305,17 @@ vrt_object_lookup(const void* payload, uintptr_t method_id)
   return cls->methods[first].func;
 }
 
-extern "C" VRT_EXPORT void vrt_object_retain(void* payload)
+extern "C" VRT_EXPORT void vrt_object_retain(void* data_address)
 {
-  vrt::Value{vrt::ValueType::object, payload}.reg_inc();
+  vrt::Value{vrt::ValueType::object, data_address}.reg_inc();
 }
 
-extern "C" VRT_EXPORT void vrt_object_release(void* payload)
+extern "C" VRT_EXPORT void vrt_object_release(void* data_address)
 {
-  vrt::Value{vrt::ValueType::object, payload}.reg_dec();
+  vrt::Value{vrt::ValueType::object, data_address}.reg_dec();
 }
 
-extern "C" VRT_EXPORT void vrt_object_escape(void* payload)
+extern "C" VRT_EXPORT void vrt_object_escape(void* data_address)
 {
-  vrt::Value{vrt::ValueType::object, payload}.escape();
+  vrt::Value{vrt::ValueType::object, data_address}.escape();
 }

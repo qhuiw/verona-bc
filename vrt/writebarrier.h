@@ -11,7 +11,7 @@ namespace vrt
 
 namespace vrt::writebarrier
 {
-  /** Consume one payload-shaped argument into a newly allocated field. */
+  /** Consume one field-layout argument into a newly allocated field. */
   void init(
     Region* store_region, void* target, const Field& field, const void* source);
 

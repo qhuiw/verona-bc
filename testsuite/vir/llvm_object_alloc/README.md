@@ -9,7 +9,7 @@ bytecode and native LLVM pipelines.
 - Dragging that object while initializing a new RC-region root.
 - Heap allocation in an existing RC region.
 - Direct arena-region allocation and objects with `none` fields.
-- Loading an empty class's immortal singleton payload.
+- Loading an empty class's immortal singleton data address.
 - Calling a generated method on a value produced by a `singleton` statement.
 
 ## Native VRT coverage

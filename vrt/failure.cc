@@ -38,7 +38,7 @@ namespace vrt
         return "invalid thread state: thread-local runtime state is "
                "inconsistent";
       case Failure::invalid_value_state:
-        return "invalid value state: the runtime value tag or payload is "
+        return "invalid value state: the runtime value tag or data address is "
                "invalid";
       case Failure::invalid_write:
         return "invalid write: the write barrier rejected an ownership or "

@@ -149,7 +149,7 @@ compiler-emitted metadata required by the API under test. Where needed, they
 construct `vrt::Function`, `vrt::Field`, `vrt::Method`, `vrt::Class`,
 `vrt::TypeInfo`, `vrt::Singleton`, and `vrt::Program` descriptors using the
 same ABI layouts and relationships emitted by the LLVM backend. Numeric IDs,
-payload structs, and sample values are deliberately small synthetic test
+field-storage structs, and sample values are deliberately small synthetic test
 data.
 
 The other fixture categories exercise different boundaries. ABI fixtures

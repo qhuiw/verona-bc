@@ -69,10 +69,9 @@ static_assert(
   std::is_same_v<decltype(vrt::Method{}.func), const vrt::Function*>);
 static_assert(std::is_same_v<decltype(vrt::Class{}.id), std::uintptr_t>);
 static_assert(std::is_same_v<decltype(vrt::Class{}.name), const char*>);
+static_assert(std::is_same_v<decltype(vrt::Class{}.data_size), std::uintptr_t>);
 static_assert(
-  std::is_same_v<decltype(vrt::Class{}.payload_size), std::uintptr_t>);
-static_assert(
-  std::is_same_v<decltype(vrt::Class{}.payload_alignment), std::uintptr_t>);
+  std::is_same_v<decltype(vrt::Class{}.data_alignment), std::uintptr_t>);
 static_assert(
   std::is_same_v<decltype(vrt::Class{}.field_count), std::uintptr_t>);
 static_assert(std::is_same_v<decltype(vrt::Class{}.fields), const vrt::Field*>);

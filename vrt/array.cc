@@ -82,7 +82,7 @@ namespace vrt
 
     auto* array = ::new (allocation)
       Array{location, type_id, value_type, size, stride, allocation};
-    std::memset(array->get_pointer(), 0, size * stride);
+    std::memset(array->elements(), 0, size * stride);
     return array;
   }
 
@@ -111,7 +111,7 @@ namespace vrt
     if (index >= size)
       fail(Failure::invalid_array_state);
 
-    return static_cast<const std::byte*>(get_pointer()) + (stride * index);
+    return static_cast<const std::byte*>(elements()) + (stride * index);
   }
 
   bool Array::is_primitive() const
@@ -149,8 +149,8 @@ namespace vrt
       fail(Failure::invalid_array_state);
 
     auto* destination_data =
-      static_cast<std::byte*>(get_pointer()) + (stride * destination_offset);
-    auto* source_data = static_cast<const std::byte*>(source->get_pointer()) +
+      static_cast<std::byte*>(elements()) + (stride * destination_offset);
+    auto* source_data = static_cast<const std::byte*>(source->elements()) +
       (stride * source_offset);
 
     if (is_primitive())
@@ -193,8 +193,7 @@ namespace vrt
     if (fill_value == nullptr)
       fail(Failure::invalid_array_state);
 
-    auto* destination =
-      static_cast<std::byte*>(get_pointer()) + (stride * offset);
+    auto* destination = static_cast<std::byte*>(elements()) + (stride * offset);
     if (is_primitive())
     {
       if (stride == 1)
@@ -211,8 +210,8 @@ namespace vrt
       return;
     }
 
-    void* payload = nullptr;
-    std::memcpy(&payload, fill_value, sizeof(payload));
+    void* data_address = nullptr;
+    std::memcpy(&data_address, fill_value, sizeof(data_address));
     auto element_descriptor = element();
     for (uintptr_t index = 0; index < length; index++)
     {
@@ -220,7 +219,7 @@ namespace vrt
         region(),
         load(offset + index),
         element_descriptor,
-        static_cast<const void*>(&payload));
+        static_cast<const void*>(&data_address));
     }
   }
 
@@ -245,9 +244,8 @@ namespace vrt
       (stride != other->stride))
       fail(Failure::invalid_array_state);
 
-    auto* left =
-      static_cast<const std::byte*>(get_pointer()) + (stride * offset);
-    auto* right = static_cast<const std::byte*>(other->get_pointer()) +
+    auto* left = static_cast<const std::byte*>(elements()) + (stride * offset);
+    auto* right = static_cast<const std::byte*>(other->elements()) +
       (stride * other_offset);
     return std::memcmp(left, right, length * stride);
   }
@@ -280,7 +278,7 @@ namespace vrt
 
 extern "C" VRT_EXPORT void* vrt_array_new(uintptr_t type_id, uintptr_t size)
 {
-  return vrt::current_frame_region()->array(type_id, size)->get_payload();
+  return vrt::current_frame_region()->array(type_id, size)->elements();
 }
 
 extern "C" VRT_EXPORT void*
@@ -288,67 +286,67 @@ vrt_array_heap(const void* region_locator, uintptr_t type_id, uintptr_t size)
 {
   auto* region = vrt::Value{vrt::ValueType::object, region_locator}.region();
   internal_check(!region->destroying, vrt::Failure::invalid_region_state);
-  return region->array(type_id, size)->get_payload();
+  return region->array(type_id, size)->elements();
 }
 
 extern "C" VRT_EXPORT void*
 vrt_array_region(vrt::RegionType region_type, uintptr_t type_id, uintptr_t size)
 {
   auto* region = vrt::Region::create(region_type);
-  return region->array(type_id, size)->get_payload();
+  return region->array(type_id, size)->elements();
 }
 
-extern "C" VRT_EXPORT void vrt_array_retain(void* payload)
+extern "C" VRT_EXPORT void vrt_array_retain(void* elements)
 {
-  vrt::Value{vrt::ValueType::array, payload}.reg_inc();
+  vrt::Value{vrt::ValueType::array, elements}.reg_inc();
 }
 
-extern "C" VRT_EXPORT void vrt_array_release(void* payload)
+extern "C" VRT_EXPORT void vrt_array_release(void* elements)
 {
-  vrt::Value{vrt::ValueType::array, payload}.reg_dec();
+  vrt::Value{vrt::ValueType::array, elements}.reg_dec();
 }
 
-extern "C" VRT_EXPORT void vrt_array_escape(void* payload)
+extern "C" VRT_EXPORT void vrt_array_escape(void* elements)
 {
-  vrt::Value{vrt::ValueType::array, payload}.escape();
+  vrt::Value{vrt::ValueType::array, elements}.escape();
 }
 
 extern "C" VRT_EXPORT void vrt_array_copy(
-  void* destination_payload,
+  void* destination_elements,
   uintptr_t destination_offset,
-  void* source_payload,
+  void* source_elements,
   uintptr_t source_offset,
   uintptr_t length)
 {
   auto* destination = static_cast<vrt::Array*>(
-    vrt::Value{vrt::ValueType::array, destination_payload}.header());
+    vrt::Value{vrt::ValueType::array, destination_elements}.header());
   auto* source = static_cast<vrt::Array*>(
-    vrt::Value{vrt::ValueType::array, source_payload}.header());
+    vrt::Value{vrt::ValueType::array, source_elements}.header());
   destination->bulk_copy(destination_offset, source, source_offset, length);
 }
 
 extern "C" VRT_EXPORT void vrt_array_fill(
-  void* destination_payload,
+  void* destination_elements,
   uintptr_t offset,
   uintptr_t length,
   const void* fill_value)
 {
   auto* destination = static_cast<vrt::Array*>(
-    vrt::Value{vrt::ValueType::array, destination_payload}.header());
+    vrt::Value{vrt::ValueType::array, destination_elements}.header());
   destination->bulk_fill(offset, length, fill_value);
 }
 
 extern "C" VRT_EXPORT int64_t vrt_array_compare(
-  void* left_payload,
+  void* left_elements,
   uintptr_t left_offset,
-  void* right_payload,
+  void* right_elements,
   uintptr_t right_offset,
   uintptr_t length)
 {
   auto* left = static_cast<vrt::Array*>(
-    vrt::Value{vrt::ValueType::array, left_payload}.header());
+    vrt::Value{vrt::ValueType::array, left_elements}.header());
   auto* right = static_cast<vrt::Array*>(
-    vrt::Value{vrt::ValueType::array, right_payload}.header());
+    vrt::Value{vrt::ValueType::array, right_elements}.header());
   return static_cast<int64_t>(
     left->bulk_compare(left_offset, right, right_offset, length));
 }

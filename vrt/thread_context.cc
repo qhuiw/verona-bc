@@ -104,8 +104,9 @@ namespace vrt
 
     if ((value_type == ValueType::object) || (value_type == ValueType::array))
     {
-      auto* payload = reinterpret_cast<void*>(static_cast<uintptr_t>(value));
-      auto* header = Value{value_type, payload}.header();
+      auto* data_address =
+        reinterpret_cast<void*>(static_cast<uintptr_t>(value));
+      auto* header = Value{value_type, data_address}.header();
       auto* source = header->region();
 
       if ((source != nullptr) && source->is_frame_local())

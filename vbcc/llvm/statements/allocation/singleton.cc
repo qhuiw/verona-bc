@@ -19,7 +19,7 @@ namespace vbcc
 
       if (lowered_class->second.singleton == nullptr)
       {
-        fail(statement, "singleton class has no payload");
+        fail(statement, "singleton class has no fields");
         return false;
       }
 

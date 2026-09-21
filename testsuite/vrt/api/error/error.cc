@@ -29,7 +29,7 @@ namespace
     nullptr,
     0,
     nullptr,
-    singleton_storage + vrt::Object::singleton_payload_offset()};
+    singleton_storage + vrt::Object::singleton_data_offset()};
 
   const vrt::TypeInfo types[] = {
     {singleton_class_id, vrt::ValueType::object, sizeof(void*), 0}};
