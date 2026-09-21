@@ -44,8 +44,8 @@ func @dynamic_tailcall($receiver: @Callable, $value: i32): i32
   tailcall $callable($receiver, $value)
 
 func @main(): none
-  $increment = new @Increment()
-  $double = new @Double()
+  $increment = singleton @Increment
+  $double = singleton @Double
 
   $ten = const i32 10
   $increment_call = call @dynamic_call($increment, $ten)

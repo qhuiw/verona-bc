@@ -48,6 +48,7 @@ add_library(libvbcllvm STATIC
   statements/allocation/object.cc
   statements/allocation/region.cc
   statements/allocation/region_array.cc
+  statements/allocation/singleton.cc
   statements/arraycompare.cc
   statements/arraycopy.cc
   statements/arrayfill.cc

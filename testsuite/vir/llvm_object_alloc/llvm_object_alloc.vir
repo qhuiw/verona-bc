@@ -21,8 +21,8 @@ class @ArenaRoot
 class @NoneBox
   @value: none
 
-// Empty classes are represented by one immortal singleton even when they have
-// methods. The method body deliberately uses only already-supported lowering.
+// Empty classes use one immortal singleton even when they have methods. The
+// method body deliberately uses only already-supported lowering.
 class @Unit
   @touch @Unit_touch
 
@@ -52,11 +52,8 @@ func @main(): none
   $none_value = const none
   $none_box = new @NoneBox($none_value)
 
-  $unit_new = new @Unit()
-  $unit_heap = heap $root @Unit()
-  $new_result = call @Unit_touch($unit_new)
-  $heap_result = call @Unit_touch($unit_heap)
-  $result = or $new_result $heap_result
+  $unit = singleton @Unit
+  $result = call @Unit_touch($unit)
 
   $_exit = ffi @set_exit_code($result)
   $_none = const none

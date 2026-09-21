@@ -9,14 +9,14 @@ bytecode and native LLVM pipelines.
 - Dragging that object while initializing a new RC-region root.
 - Heap allocation in an existing RC region.
 - Direct arena-region allocation and objects with `none` fields.
-- Empty-class singleton representation for both frame-local and heap syntax.
-- Calling a generated method on empty-class values from both allocation paths.
+- Loading an empty class's immortal singleton payload.
+- Calling a generated method on a value produced by a `singleton` statement.
 
 ## Native VRT coverage
 
 VRT allocates frame-local, RC-region, heap-attached, and arena-region objects;
-tracks the RC-region ownership relationships; and supplies the immortal
-empty-class singleton used by both `new` and `heap` expressions.
+tracks the RC-region ownership relationships; and initializes the immortal
+empty-class singleton consumed by generated code.
 
 ## Non-goals
 

@@ -10,7 +10,7 @@ func @consume($_box: @Box): none
   ret $_none
 
 func @main(): none
-  $locator = new @Singleton()
+  $locator = singleton @Singleton
   $value = const i32 1
   $bad = heap $locator @Box($value)
   $_consume = call @consume($bad)

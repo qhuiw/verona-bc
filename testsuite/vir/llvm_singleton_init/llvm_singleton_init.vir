@@ -3,10 +3,13 @@
 //   nominal class.
 // - Adds the storage and class descriptor to the generated program singleton
 //   table.
+// - Lowers singleton to the precomputed payload pointer and applies object
+//   ownership lowering to it.
 //
 // Native VRT coverage:
 // - Program initialization consumes the singleton table and constructs the
 //   immortal object header before entering generated main.
+// - Generated code releases the initialized payload through the object runtime.
 //
 // Non-goals:
 // - Does not exercise New, Heap, Region, or dynamic method lookup.
@@ -22,6 +25,7 @@ func @Unit_touch($self: @Unit): i32
   ret $result
 
 func @main(): none
-  $result = const i32 0
+  $unit = singleton @Unit
+  $result = call @Unit_touch($unit)
   $_exit = ffi @set_exit_code($result)
   ret $_exit

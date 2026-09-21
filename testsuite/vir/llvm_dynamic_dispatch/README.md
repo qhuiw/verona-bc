@@ -15,10 +15,11 @@ bytecode and native LLVM pipelines.
 
 ## Native VRT coverage
 
-VRT allocates the receiver objects and returns their immutable class IDs to the
-generated switch. The selected generated function descriptor is then consumed
-through both ordinary-call and tail-call paths. The runtime lookup fallback is
-present in emitted IR but is not taken by this fixture's known receiver types.
+VRT initializes the immortal singleton receivers and returns their immutable
+class IDs to the generated switch. The selected generated function descriptor
+is then consumed through both ordinary-call and tail-call paths. The runtime
+lookup fallback is present in emitted IR but is not taken by this fixture's
+known receiver types.
 
 ## Non-goals
 

@@ -71,6 +71,9 @@ namespace vbcc
       if (statement == Drop)
         return emit_drop(statement);
 
+      if (statement == Singleton)
+        return emit_singleton(statement);
+
       if (statement == New)
         return emit_new(statement);
 

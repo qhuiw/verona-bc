@@ -10,6 +10,7 @@
 
 namespace llvm
 {
+  class Constant;
   class Function;
   class GlobalVariable;
   class StructType;
@@ -101,6 +102,7 @@ namespace vbcc
       llvm::StructType* payload_type;
       std::vector<LoweredType> field_types;
       llvm::GlobalVariable* cls = nullptr;
+      llvm::Constant* singleton = nullptr;
     };
 
     struct LoweredRuntime

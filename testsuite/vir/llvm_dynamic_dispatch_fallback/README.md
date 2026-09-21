@@ -13,9 +13,9 @@ more classes than the compiler's bounded switch policy permits.
 
 ## Native VRT coverage
 
-VRT allocates both receiver objects and searches their emitted sorted method
-tables. The selected generated function descriptors are invoked through the
-ordinary dynamic-call path.
+VRT initializes both immortal singleton receivers and searches their emitted
+sorted method tables. The selected generated function descriptors are invoked
+through the ordinary dynamic-call path.
 
 ## Non-goals
 

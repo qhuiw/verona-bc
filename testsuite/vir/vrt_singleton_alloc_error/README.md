@@ -1,8 +1,8 @@
 # VRT singleton allocation error fixture
 
-**Coverage:** The native pipeline initializes an empty-class singleton, then
-uses it as the locator for an RC heap allocation and must reject the invalid
-allocation target.
+**Coverage:** The native pipeline lowers an explicit `singleton` statement,
+then uses its empty-class value as the locator for an RC heap allocation and
+must reject the invalid allocation target.
 
 **Native VRT coverage:** VRT diagnoses `runtime error: bad alloc target` and
 terminates the native program with status 1.

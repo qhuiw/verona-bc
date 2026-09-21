@@ -328,12 +328,12 @@ namespace vbcc
             "verona.class." + std::to_string(index) + ".singleton");
           singleton_storage->setAlignment(llvm::Align(alignof(vrt::Object)));
 
-          auto* singleton_offset = llvm::ConstantInt::get(
+          auto* payload_offset = llvm::ConstantInt::get(
             word_type, vrt::Object::singleton_payload_offset());
+          llvm::Constant* singleton_indices[] = {zero, payload_offset};
           singleton_pointer = llvm::ConstantExpr::getInBoundsGetElementPtr(
-            llvm::Type::getInt8Ty(context),
-            singleton_storage,
-            singleton_offset);
+            storage_type, singleton_storage, singleton_indices);
+          lowered_class.singleton = singleton_pointer;
         }
 
         auto* metadata = llvm::ConstantStruct::get(

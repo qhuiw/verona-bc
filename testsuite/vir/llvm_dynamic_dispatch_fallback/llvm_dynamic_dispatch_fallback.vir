@@ -74,8 +74,8 @@ func @dynamic_call($receiver: @Many): i32
   ret $result
 
 func @main(): none
-  $first = new @Class0()
-  $last = new @Class8()
+  $first = singleton @Class0
+  $last = singleton @Class8
 
   $first_result = call @dynamic_call($first)
   $last_result = call @dynamic_call($last)
