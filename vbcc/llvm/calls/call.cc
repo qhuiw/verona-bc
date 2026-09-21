@@ -90,9 +90,7 @@ namespace vbcc
       if (callee.signature.return_type.ir_type == IRValueType::None)
       {
         return locals.bind_value(
-          statement,
-          dst,
-          LoweredValue{callee.signature.return_type, nullptr});
+          statement, dst, LoweredValue{callee.signature.return_type, nullptr});
       }
 
       return locals.bind_value(

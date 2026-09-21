@@ -4,7 +4,8 @@ namespace vbcc
 {
   namespace llvm_backend
   {
-    // SetRaise replaces the current frame's raise target and returns the old one.
+    // SetRaise replaces the current frame's raise target and returns the old
+    // one.
     bool LLVMCodegen::emit_set_raise(const Node& statement)
     {
       if (runtime.frame_set_raise_target == nullptr)

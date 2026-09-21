@@ -6,8 +6,7 @@ namespace vbcc
 {
   namespace llvm_backend
   {
-    std::optional<LoweredType>
-    LLVMCodegen::lower_class_id(const Node& type)
+    std::optional<LoweredType> LLVMCodegen::lower_class_id(const Node& type)
     {
       auto name = node_text(type);
       if (classes.find(name) == classes.end())

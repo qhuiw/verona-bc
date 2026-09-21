@@ -34,8 +34,7 @@ namespace vrt
     auto content_type_id = unarray(type_id);
     auto layout = layout_type_id(content_type_id);
     auto* allocation =
-      new (std::nothrow)
-        std::byte[Array::size_of(size, layout.storage_size)];
+      new (std::nothrow) std::byte[Array::size_of(size, layout.storage_size)];
     if (allocation == nullptr)
       fail(Failure::out_of_memory);
 

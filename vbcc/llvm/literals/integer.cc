@@ -106,9 +106,8 @@ namespace vbcc
     {
       assert(literal->type().in({Bin, Oct, Hex, Int, Char}));
 
-      if (
-        type->type().in(
-          {I8, I16, I32, I64, U8, U16, U32, U64, ILong, ULong, ISize, USize}))
+      if (type->type().in(
+            {I8, I16, I32, I64, U8, U16, U32, U64, ILong, ULong, ISize, USize}))
         return lower_integer_value(type, literal, lowered, error);
 
       error = "integer literal requires an integer type";

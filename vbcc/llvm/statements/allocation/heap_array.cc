@@ -19,8 +19,7 @@ namespace vbcc
         (region_source->value == nullptr))
       {
         fail(
-          statement,
-          "heap array allocation requires an object region source");
+          statement, "heap array allocation requires an object region source");
         return false;
       }
 

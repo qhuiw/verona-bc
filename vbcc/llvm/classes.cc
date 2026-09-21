@@ -27,10 +27,7 @@ namespace vbcc
                .emplace(
                  name,
                  LoweredClass{
-                   NumPrimitiveClasses + index,
-                   payload_type,
-                   {},
-                   nullptr})
+                   NumPrimitiveClasses + index, payload_type, {}, nullptr})
                .second)
         {
           fail(class_id, "duplicate LLVM class '" + name + "'");
@@ -143,27 +140,26 @@ namespace vbcc
           const auto& field_type = lowered_class.field_types.at(field_index);
           std::size_t type_id = 0;
 
-          if (
-            (field / Type)
-              ->type()
-              .in(
-                {None,
-                 Bool,
-                 I8,
-                 I16,
-                 I32,
-                 I64,
-                 U8,
-                 U16,
-                 U32,
-                 U64,
-                 F32,
-                 F64,
-                 ILong,
-                 ULong,
-                 ISize,
-                 USize,
-                 Ptr}))
+          if ((field / Type)
+                ->type()
+                .in(
+                  {None,
+                   Bool,
+                   I8,
+                   I16,
+                   I32,
+                   I64,
+                   U8,
+                   U16,
+                   U32,
+                   U64,
+                   F32,
+                   F64,
+                   ILong,
+                   ULong,
+                   ISize,
+                   USize,
+                   Ptr}))
           {
             type_id = +val(field / Type);
           }

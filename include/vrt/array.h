@@ -14,8 +14,8 @@ extern "C"
   VRT_EXPORT void* vrt_array_new(uintptr_t type_id, uintptr_t size);
 
   /** Allocate an array in the region containing an object payload. */
-  VRT_EXPORT void* vrt_array_heap(
-    const void* region_locator, uintptr_t type_id, uintptr_t size);
+  VRT_EXPORT void*
+  vrt_array_heap(const void* region_locator, uintptr_t type_id, uintptr_t size);
 
   /** Allocate an array as the entry point of a new region. */
   VRT_EXPORT void* vrt_array_region(
@@ -24,7 +24,8 @@ extern "C"
   /** Add one owning register reference to an array element-storage pointer. */
   VRT_EXPORT void vrt_array_retain(void* payload);
 
-  /** Consume one owning register reference to an array element-storage pointer. */
+  /** Consume one owning register reference to an array element-storage pointer.
+   */
   VRT_EXPORT void vrt_array_release(void* payload);
 
   /** Relocate a current-frame-local array so it can be returned safely. */

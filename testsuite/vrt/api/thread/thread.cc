@@ -1,7 +1,6 @@
+#include <thread>
 #include <vrt/frame.h>
 #include <vrt/thread.h>
-
-#include <thread>
 
 int main()
 {

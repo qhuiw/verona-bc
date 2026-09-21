@@ -80,13 +80,8 @@ namespace vrt
         location.to_region()->is_finalizing())))
       fail(Failure::invalid_array_state);
 
-    auto* array = ::new (allocation) Array{
-      location,
-      type_id,
-      value_type,
-      size,
-      stride,
-      allocation};
+    auto* array = ::new (allocation)
+      Array{location, type_id, value_type, size, stride, allocation};
     std::memset(array->get_pointer(), 0, size * stride);
     return array;
   }
@@ -283,23 +278,21 @@ namespace vrt
   }
 }
 
-extern "C" VRT_EXPORT void*
-vrt_array_new(uintptr_t type_id, uintptr_t size)
+extern "C" VRT_EXPORT void* vrt_array_new(uintptr_t type_id, uintptr_t size)
 {
   return vrt::current_frame_region()->array(type_id, size)->get_payload();
 }
 
-extern "C" VRT_EXPORT void* vrt_array_heap(
-  const void* region_locator, uintptr_t type_id, uintptr_t size)
+extern "C" VRT_EXPORT void*
+vrt_array_heap(const void* region_locator, uintptr_t type_id, uintptr_t size)
 {
-  auto* region =
-    vrt::Value{vrt::ValueType::object, region_locator}.region();
+  auto* region = vrt::Value{vrt::ValueType::object, region_locator}.region();
   internal_check(!region->destroying, vrt::Failure::invalid_region_state);
   return region->array(type_id, size)->get_payload();
 }
 
-extern "C" VRT_EXPORT void* vrt_array_region(
-  vrt::RegionType region_type, uintptr_t type_id, uintptr_t size)
+extern "C" VRT_EXPORT void*
+vrt_array_region(vrt::RegionType region_type, uintptr_t type_id, uintptr_t size)
 {
   auto* region = vrt::Region::create(region_type);
   return region->array(type_id, size)->get_payload();
@@ -331,8 +324,7 @@ extern "C" VRT_EXPORT void vrt_array_copy(
     vrt::Value{vrt::ValueType::array, destination_payload}.header());
   auto* source = static_cast<vrt::Array*>(
     vrt::Value{vrt::ValueType::array, source_payload}.header());
-  destination->bulk_copy(
-    destination_offset, source, source_offset, length);
+  destination->bulk_copy(destination_offset, source, source_offset, length);
 }
 
 extern "C" VRT_EXPORT void vrt_array_fill(

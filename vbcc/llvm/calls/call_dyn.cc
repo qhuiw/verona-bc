@@ -86,8 +86,7 @@ namespace vbcc
         llvm_args.push_back(value.value);
       }
 
-      auto function_pointer =
-        emit_callable_entry(statement, *target);
+      auto function_pointer = emit_callable_entry(statement, *target);
 
       if (!function_pointer)
         return false;

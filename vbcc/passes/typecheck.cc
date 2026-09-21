@@ -1835,8 +1835,7 @@ namespace vbcc
           };
 
           if (
-            !check_size_arg(1) ||
-            ((node != ArrayFill) && !check_size_arg(3)) ||
+            !check_size_arg(1) || ((node != ArrayFill) && !check_size_arg(3)) ||
             !check_size_arg(node == ArrayFill ? 2 : 4))
             return true;
 
@@ -1845,7 +1844,8 @@ namespace vbcc
             auto fill_type = typed(args->at(3) / Rhs);
             if (
               first_array && (first_array == Array) && fill_type &&
-              !IRSubtype.invariant(top, resolve_type(first_array / Type), fill_type))
+              !IRSubtype.invariant(
+                top, resolve_type(first_array / Type), fill_type))
             {
               type_err(
                 args->at(3),
@@ -1898,8 +1898,7 @@ namespace vbcc
             return true;
           }
 
-          set_type(
-            env, node / LocalId, node == ArrayCompare ? I64 : None);
+          set_type(env, node / LocalId, node == ArrayCompare ? I64 : None);
         }
         else if (node->type().in({MakeCallback, CodePtrCallback}))
         {

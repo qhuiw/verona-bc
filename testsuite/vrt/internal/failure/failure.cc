@@ -39,8 +39,7 @@ int main()
     {vrt::Failure::invalid_write,
      "invalid write: the write barrier rejected an ownership or region "
      "transition"},
-    {vrt::Failure::out_of_memory,
-     "out of memory: a runtime allocation failed"},
+    {vrt::Failure::out_of_memory, "out of memory: a runtime allocation failed"},
   };
 
   for (const auto& [failure, expected] : failure_messages)

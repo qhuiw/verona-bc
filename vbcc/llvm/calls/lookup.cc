@@ -12,8 +12,7 @@ namespace vbcc
 {
   namespace llvm_backend
   {
-    std::optional<LookupPlan>
-    LLVMCodegen::resolve_lookup(const Node& statement)
+    std::optional<LookupPlan> LLVMCodegen::resolve_lookup(const Node& statement)
     {
       auto method_id = statement / MethodId;
       std::set<std::size_t> target_class_ids;
@@ -50,8 +49,7 @@ namespace vbcc
             {
               fail(
                 method / FunctionId,
-                "dynamic method function '" + function_id +
-                  "' is unavailable");
+                "dynamic method function '" + function_id + "' is unavailable");
               collection_failed = true;
               return false;
             }
@@ -247,12 +245,12 @@ namespace vbcc
         auto* function = builder.GetInsertBlock()->getParent();
         auto* fallback = llvm::BasicBlock::Create(
           context, name + ".lookup.fallback", function);
-        auto* merge = llvm::BasicBlock::Create(
-          context, name + ".lookup.merge", function);
+        auto* merge =
+          llvm::BasicBlock::Create(context, name + ".lookup.merge", function);
         auto* class_id = builder.CreateCall(
           runtime.object_class_id, {receiver->value}, name + ".class-id");
-        auto* dispatch = builder.CreateSwitch(
-          class_id, fallback, plan->targets.size());
+        auto* dispatch =
+          builder.CreateSwitch(class_id, fallback, plan->targets.size());
 
         std::vector<std::pair<llvm::BasicBlock*, llvm::Value*>> incoming;
         incoming.reserve(plan->targets.size() + 1);
@@ -260,8 +258,8 @@ namespace vbcc
         for (std::size_t index = 0; index < plan->targets.size(); ++index)
         {
           const auto& target = plan->targets[index];
-          auto* case_block = llvm::BasicBlock::Create(
-            context, name + ".lookup.case", function);
+          auto* case_block =
+            llvm::BasicBlock::Create(context, name + ".lookup.case", function);
           dispatch->addCase(
             llvm::ConstantInt::get(word_type, target.class_id), case_block);
           builder.SetInsertPoint(case_block);

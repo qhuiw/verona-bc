@@ -59,8 +59,8 @@ namespace vrt
     std::longjmp(catch_point->continuation, 1);
   }
 
-  ErrorInfo ThreadContext::try_invoke(
-    InvocationFunction function, void* user_context)
+  ErrorInfo
+  ThreadContext::try_invoke(InvocationFunction function, void* user_context)
   {
     internal_check(
       (function != nullptr) && (thread.frame == nullptr) &&

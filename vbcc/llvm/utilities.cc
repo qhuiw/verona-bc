@@ -6,8 +6,7 @@ namespace vbcc
 {
   namespace llvm_backend
   {
-    std::optional<std::size_t>
-    LLVMCodegen::runtime_type_id(const Node& input)
+    std::optional<std::size_t> LLVMCodegen::runtime_type_id(const Node& input)
     {
       auto type = input;
 
@@ -61,8 +60,7 @@ namespace vbcc
       }
       else
       {
-        const auto complex_base =
-          state.classes.size() + NumPrimitiveClasses;
+        const auto complex_base = state.classes.size() + NumPrimitiveClasses;
 
         for (std::size_t index = 0; index < state.complex_primitives.size();
              ++index)

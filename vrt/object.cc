@@ -88,8 +88,7 @@ namespace
     validate_class(cls);
 
     internal_check(
-      (argc == cls->field_count) &&
-        ((argc == 0) || (packed_args != nullptr)),
+      (argc == cls->field_count) && ((argc == 0) || (packed_args != nullptr)),
       vrt::Failure::invalid_object_state);
   }
 
@@ -123,9 +122,8 @@ namespace vrt
     internal_check(
       ((alignment - 1) <=
        (std::numeric_limits<uintptr_t>::max() - fixed_prefix)) &&
-        (payload_size <=
-         (std::numeric_limits<uintptr_t>::max() - fixed_prefix -
-          (alignment - 1))),
+        (payload_size <= (std::numeric_limits<uintptr_t>::max() - fixed_prefix -
+                          (alignment - 1))),
       Failure::invalid_object_state);
 
     return fixed_prefix + (alignment - 1) + payload_size;
@@ -150,8 +148,7 @@ namespace vrt
     const auto unaligned =
       reinterpret_cast<uintptr_t>(allocation + fixed_prefix);
     internal_check(
-      unaligned <=
-        (std::numeric_limits<uintptr_t>::max() - (alignment - 1)),
+      unaligned <= (std::numeric_limits<uintptr_t>::max() - (alignment - 1)),
       Failure::invalid_object_state);
 
     const auto payload_address =

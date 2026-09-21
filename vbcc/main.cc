@@ -1,9 +1,8 @@
 #include "bytecode.h"
 #include "lang.h"
 
-#include <trieste/driver.h>
-
 #include <string>
+#include <trieste/driver.h>
 
 int main(int argc, char** argv)
 {

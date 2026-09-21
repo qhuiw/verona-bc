@@ -58,16 +58,12 @@ namespace vbcc
         declare("vrt_frame_raise", void_type, {word_type, i64_type});
       runtime.frame_take_raised_value =
         declare("vrt_frame_take_raised_value", i64_type, {});
-      runtime.array_new = declare(
-        "vrt_array_new", pointer_type, {word_type, word_type});
+      runtime.array_new =
+        declare("vrt_array_new", pointer_type, {word_type, word_type});
       runtime.array_heap = declare(
-        "vrt_array_heap",
-        pointer_type,
-        {pointer_type, word_type, word_type});
+        "vrt_array_heap", pointer_type, {pointer_type, word_type, word_type});
       runtime.array_region = declare(
-        "vrt_array_region",
-        pointer_type,
-        {i8_type, word_type, word_type});
+        "vrt_array_region", pointer_type, {i8_type, word_type, word_type});
       runtime.array_retain =
         declare("vrt_array_retain", void_type, {pointer_type});
       runtime.array_release =
@@ -100,8 +96,8 @@ namespace vbcc
         {i8_type, pointer_type, word_type, pointer_type});
       runtime.object_class_id =
         declare("vrt_object_class_id", word_type, {pointer_type});
-      runtime.object_lookup_method = declare(
-        "vrt_object_lookup", pointer_type, {pointer_type, word_type});
+      runtime.object_lookup_method =
+        declare("vrt_object_lookup", pointer_type, {pointer_type, word_type});
       runtime.object_retain =
         declare("vrt_object_retain", void_type, {pointer_type});
       runtime.object_release =

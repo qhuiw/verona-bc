@@ -44,17 +44,17 @@ namespace
     {offsetof(ValuePayload, value),
      sizeof(ValuePayload::value),
      0,
-    vrt::ValueType::scalar}};
+     vrt::ValueType::scalar}};
 
   const vrt::Field holder_fields[] = {
     {offsetof(HolderPayload, value),
      sizeof(HolderPayload::value),
      value_class_id,
-    vrt::ValueType::object},
+     vrt::ValueType::object},
     {offsetof(HolderPayload, tag),
      sizeof(HolderPayload::tag),
      0,
-    vrt::ValueType::scalar}};
+     vrt::ValueType::scalar}};
 
   vrt::Class value_class{
     value_class_id,

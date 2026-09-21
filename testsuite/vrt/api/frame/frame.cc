@@ -1,8 +1,7 @@
 #include "frame.h"
 
-#include <vrt/thread.h>
-
 #include <csetjmp>
+#include <vrt/thread.h>
 
 int main()
 {

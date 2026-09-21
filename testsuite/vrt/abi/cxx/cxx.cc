@@ -14,8 +14,7 @@ static_assert(std::is_same_v<vrt_thread, vrt::Thread>);
 static_assert(std::is_same_v<vrt_region_type, vrt::RegionType>);
 static_assert(std::is_same_v<vrt_error, vrt::Error>);
 static_assert(std::is_same_v<vrt_error_info, vrt::ErrorInfo>);
-static_assert(
-  std::is_same_v<vrt_invocation_function, vrt::InvocationFunction>);
+static_assert(std::is_same_v<vrt_invocation_function, vrt::InvocationFunction>);
 static_assert(
   std::is_same_v<std::underlying_type_t<vrt::Error>, std::uint32_t>);
 static_assert(VRT_ERROR_BAD_ARRAY_INDEX == vrt::Error::bad_array_index);
@@ -55,22 +54,19 @@ static_assert(std::is_standard_layout_v<vrt::ErrorInfo>);
 static_assert(std::is_same_v<decltype(vrt::ErrorInfo{}.code), vrt::Error>);
 static_assert(
   std::is_same_v<decltype(vrt::ErrorInfo{}.func), const vrt::Function*>);
-static_assert(
-  std::is_same_v<decltype(vrt::ErrorInfo{}.site), std::uintptr_t>);
+static_assert(std::is_same_v<decltype(vrt::ErrorInfo{}.site), std::uintptr_t>);
 static_assert(std::is_same_v<decltype(vrt::Function{}.id), std::uint64_t>);
 static_assert(std::is_same_v<decltype(vrt::Function{}.name), const char*>);
-static_assert(std::is_same_v<
-              decltype(vrt::Function{}.entry),
-              vrt::FunctionEntry>);
+static_assert(
+  std::is_same_v<decltype(vrt::Function{}.entry), vrt::FunctionEntry>);
 static_assert(std::is_same_v<decltype(vrt::Field{}.offset), std::uintptr_t>);
 static_assert(std::is_same_v<decltype(vrt::Field{}.size), std::uintptr_t>);
 static_assert(std::is_same_v<decltype(vrt::Field{}.type_id), std::uintptr_t>);
 static_assert(
   std::is_same_v<decltype(vrt::Field{}.value_type), vrt::ValueType>);
 static_assert(std::is_same_v<decltype(vrt::Method{}.id), std::uintptr_t>);
-static_assert(std::is_same_v<
-              decltype(vrt::Method{}.func),
-              const vrt::Function*>);
+static_assert(
+  std::is_same_v<decltype(vrt::Method{}.func), const vrt::Function*>);
 static_assert(std::is_same_v<decltype(vrt::Class{}.id), std::uintptr_t>);
 static_assert(std::is_same_v<decltype(vrt::Class{}.name), const char*>);
 static_assert(
@@ -87,24 +83,18 @@ static_assert(
 static_assert(std::is_same_v<decltype(vrt::Class{}.singleton), void*>);
 static_assert(std::is_same_v<decltype(vrt::TypeInfo{}.id), std::uintptr_t>);
 static_assert(
-  std::is_same_v<
-    decltype(vrt::TypeInfo{}.value_type),
-    vrt::ValueType>);
+  std::is_same_v<decltype(vrt::TypeInfo{}.value_type), vrt::ValueType>);
 static_assert(
   std::is_same_v<decltype(vrt::TypeInfo{}.storage_size), std::uintptr_t>);
 static_assert(
-  std::is_same_v<
-    decltype(vrt::TypeInfo{}.element_type_id),
-    std::uintptr_t>);
+  std::is_same_v<decltype(vrt::TypeInfo{}.element_type_id), std::uintptr_t>);
 static_assert(std::is_same_v<decltype(vrt::Singleton{}.storage), void*>);
 static_assert(
   std::is_same_v<decltype(vrt::Singleton{}.cls), const vrt::Class*>);
 static_assert(
   std::is_same_v<decltype(vrt::Program{}.type_count), std::uintptr_t>);
 static_assert(
-  std::is_same_v<
-    decltype(vrt::Program{}.types),
-    const vrt::TypeInfo*>);
+  std::is_same_v<decltype(vrt::Program{}.types), const vrt::TypeInfo*>);
 static_assert(
   std::is_same_v<decltype(vrt::Program{}.singleton_count), std::uintptr_t>);
 static_assert(
@@ -141,10 +131,9 @@ static_assert(std::is_same_v<
               std::uint64_t (*)(std::uint64_t)>);
 static_assert(
   std::is_same_v<decltype(&vrt_frame_raise_continuation), void* (*)(void)>);
-static_assert(
-  std::is_same_v<
-    decltype(&vrt_frame_raise),
-    void (*)(vrt_value_type, std::uint64_t)>);
+static_assert(std::is_same_v<
+              decltype(&vrt_frame_raise),
+              void (*)(vrt_value_type, std::uint64_t)>);
 static_assert(std::is_same_v<
               decltype(&vrt_frame_take_raised_value),
               std::uint64_t (*)(void)>);
@@ -155,9 +144,8 @@ static_assert(
 static_assert(std::is_same_v<
               decltype(&vrt_frame_func),
               const vrt_func* (*)(const vrt_frame*)>);
-static_assert(std::is_same_v<
-              decltype(&vrt_func_entry),
-              vrt_func_ptr (*)(const vrt_func*)>);
+static_assert(
+  std::is_same_v<decltype(&vrt_func_entry), vrt_func_ptr (*)(const vrt_func*)>);
 static_assert(std::is_same_v<
               decltype(&vrt_array_new),
               void* (*)(std::uintptr_t, std::uintptr_t)>);
@@ -170,18 +158,15 @@ static_assert(std::is_same_v<
 static_assert(std::is_same_v<decltype(&vrt_array_retain), void (*)(void*)>);
 static_assert(std::is_same_v<decltype(&vrt_array_release), void (*)(void*)>);
 static_assert(std::is_same_v<decltype(&vrt_array_escape), void (*)(void*)>);
-static_assert(
-  std::is_same_v<
-    decltype(&vrt_array_copy),
-    void (*)(void*, uintptr_t, void*, uintptr_t, uintptr_t)>);
-static_assert(
-  std::is_same_v<
-    decltype(&vrt_array_fill),
-    void (*)(void*, uintptr_t, uintptr_t, const void*)>);
-static_assert(
-  std::is_same_v<
-    decltype(&vrt_array_compare),
-    int64_t (*)(void*, uintptr_t, void*, uintptr_t, uintptr_t)>);
+static_assert(std::is_same_v<
+              decltype(&vrt_array_copy),
+              void (*)(void*, uintptr_t, void*, uintptr_t, uintptr_t)>);
+static_assert(std::is_same_v<
+              decltype(&vrt_array_fill),
+              void (*)(void*, uintptr_t, uintptr_t, const void*)>);
+static_assert(std::is_same_v<
+              decltype(&vrt_array_compare),
+              int64_t (*)(void*, uintptr_t, void*, uintptr_t, uintptr_t)>);
 static_assert(std::is_same_v<
               decltype(&vrt_object_new),
               void* (*)(const vrt_class*, std::uintptr_t, const void*)>);

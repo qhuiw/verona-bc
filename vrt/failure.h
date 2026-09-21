@@ -37,6 +37,5 @@ namespace vrt
 #  define internal_check(guard, code) \
     ::vrt::internal_check_impl((guard), (code))
 #else
-#  define internal_check(guard, code) \
-  ((void)sizeof(guard), (void)sizeof(code))
+#  define internal_check(guard, code) ((void)sizeof(guard), (void)sizeof(code))
 #endif

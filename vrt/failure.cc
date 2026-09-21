@@ -63,8 +63,8 @@ namespace vrt
     std::terminate();
   }
 
-  void internal_check_impl(
-    bool guard, Failure reason, std::source_location location)
+  void
+  internal_check_impl(bool guard, Failure reason, std::source_location location)
   {
     if (!guard)
       fail(reason, location);

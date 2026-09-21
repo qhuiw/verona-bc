@@ -26,25 +26,24 @@ namespace vbcc
                               U16,  U32,  U64, ILong, ULong, ISize, USize,
                               F32,  F64,  Ptr, Array, Ref,   Cown}));
 
-      if (
-        type->type().in(
-          {None,
-           Bool,
-           I8,
-           I16,
-           I32,
-           I64,
-           U8,
-           U16,
-           U32,
-           U64,
-           ILong,
-           ULong,
-           ISize,
-           USize,
-           F32,
-           F64,
-           Ptr}))
+      if (type->type().in(
+            {None,
+             Bool,
+             I8,
+             I16,
+             I32,
+             I64,
+             U8,
+             U16,
+             U32,
+             U64,
+             ILong,
+             ULong,
+             ISize,
+             USize,
+             F32,
+             F64,
+             Ptr}))
         return lower_primitive_type(context, type);
 
       if (type == Array)

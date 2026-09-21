@@ -2520,8 +2520,7 @@ namespace vbci
           auto h = closure->get_header();
           auto r = h->region();
           LOG(Error) << "Closure argument is not sendable: " << closure.borrow()
-                     << " in region " << r
-                     << " stack_rc=" << r->get_stack_rc()
+                     << " in region " << r << " stack_rc=" << r->get_stack_rc()
                      << " has_parent=" << r->has_parent()
                      << " has_cown=" << r->has_cown_owner()
                      << " frame_local=" << r->is_frame_local();

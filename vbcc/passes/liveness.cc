@@ -169,27 +169,26 @@ namespace vbcc
             use(node / Rhs);
             def(node / LocalId);
           }
-          else if (node->in(
-                     {Const,
-                      ConstStr,
-                      NewArrayConst,
-                      StackArrayConst,
-                      RegionArrayConst,
-                      FieldRef,
-                      ArrayRefConst,
-                      FFI,
-                      FFIStruct,
-                      GetRaise,
-                      Const_E,
-                      Const_Pi,
-                      Const_Inf,
-                      Const_NaN,
-                      AddExternal,
-                      RemoveExternal,
-                      MemoSlot,
-                      ArrayCopy,
-                      ArrayFill,
-                      ArrayCompare}))
+          else if (node->in({Const,
+                             ConstStr,
+                             NewArrayConst,
+                             StackArrayConst,
+                             RegionArrayConst,
+                             FieldRef,
+                             ArrayRefConst,
+                             FFI,
+                             FFIStruct,
+                             GetRaise,
+                             Const_E,
+                             Const_Pi,
+                             Const_Inf,
+                             Const_NaN,
+                             AddExternal,
+                             RemoveExternal,
+                             MemoSlot,
+                             ArrayCopy,
+                             ArrayFill,
+                             ArrayCompare}))
           {
             def(node / LocalId);
           }
@@ -419,8 +418,7 @@ namespace vbcc
 
                       if (dst && (*dst == r))
                       {
-                        body->insert(
-                          std::next(it), Drop << clone(s->front()));
+                        body->insert(std::next(it), Drop << clone(s->front()));
                         break;
                       }
                     }

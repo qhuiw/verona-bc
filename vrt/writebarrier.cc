@@ -212,8 +212,7 @@ namespace vrt::writebarrier
 
     internal_check(
       !incoming->finalizing && (incoming->get_type_id() == field.type_id) &&
-        ((incoming->region() != nullptr) ||
-         incoming->location().is_immortal()),
+        ((incoming->region() != nullptr) || incoming->location().is_immortal()),
       Failure::invalid_write);
 
     if (incoming == outgoing)

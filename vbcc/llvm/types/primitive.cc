@@ -70,9 +70,8 @@ namespace vbcc
       if (type == Bool)
         return lower_bool(context);
 
-      if (
-        type->type().in(
-          {I8, I16, I32, I64, U8, U16, U32, U64, ILong, ULong, ISize, USize}))
+      if (type->type().in(
+            {I8, I16, I32, I64, U8, U16, U32, U64, ILong, ULong, ISize, USize}))
         return lower_integer_type(context, type);
 
       if (type->type().in({F32, F64}))

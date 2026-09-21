@@ -25,8 +25,8 @@ namespace vbcc
             {NewArrayConst, HeapArrayConst, RegionArrayConst}))
       {
         std::string error;
-        auto size = lower_literal(
-          usize_type, statement / Rhs, *lowered_usize, error);
+        auto size =
+          lower_literal(usize_type, statement / Rhs, *lowered_usize, error);
         if (!size)
         {
           fail(statement, error);
@@ -37,8 +37,7 @@ namespace vbcc
       }
 
       auto size = locals.find_value(statement / Rhs);
-      if (
-        !size || (size->type != *lowered_usize) || (size->value == nullptr))
+      if (!size || (size->type != *lowered_usize) || (size->value == nullptr))
       {
         fail(statement, "array allocation requires a usize length");
         return {};
@@ -90,9 +89,7 @@ namespace vbcc
         strip_sigil(node_text(statement / LocalId)));
 
       return locals.bind_value(
-        statement,
-        statement / LocalId,
-        LoweredValue{*lowered_array, result});
+        statement, statement / LocalId, LoweredValue{*lowered_array, result});
     }
   }
 }

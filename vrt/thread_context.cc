@@ -86,8 +86,8 @@ namespace vrt
     }
   }
 
-  [[noreturn]] void ThreadContext::raise(
-    ValueType value_type, uint64_t value, Location target_id)
+  [[noreturn]] void
+  ThreadContext::raise(ValueType value_type, uint64_t value, Location target_id)
   {
     auto* frame = thread.frame;
     internal_check(frame != nullptr, Failure::invalid_thread_state);
@@ -102,12 +102,9 @@ namespace vrt
     if (target == nullptr)
       raise_error(Error::bad_raise_target);
 
-    if (
-      (value_type == ValueType::object) ||
-      (value_type == ValueType::array))
+    if ((value_type == ValueType::object) || (value_type == ValueType::array))
     {
-      auto* payload =
-        reinterpret_cast<void*>(static_cast<uintptr_t>(value));
+      auto* payload = reinterpret_cast<void*>(static_cast<uintptr_t>(value));
       auto* header = Value{value_type, payload}.header();
       auto* source = header->region();
 

@@ -46,9 +46,8 @@ namespace vbcc
 
       auto* word_type = module.getDataLayout().getIntPtrType(context);
       auto* pointer_type = llvm::PointerType::getUnqual(context);
-      auto* type_metadata_type =
-        llvm::StructType::get(
-          context, {word_type, word_type, word_type, word_type});
+      auto* type_metadata_type = llvm::StructType::get(
+        context, {word_type, word_type, word_type, word_type});
       auto* singleton_metadata_type =
         llvm::StructType::get(context, {pointer_type, pointer_type});
       auto* program_metadata_type = llvm::StructType::get(
@@ -62,8 +61,8 @@ namespace vbcc
       };
 
       std::map<std::size_t, EmittedType> types;
-      const auto metadata_for = [&](const Node& type)
-        -> std::optional<EmittedType> {
+      const auto metadata_for =
+        [&](const Node& type) -> std::optional<EmittedType> {
         auto lowered = lower_type(type);
         if (!lowered)
           return {};
@@ -115,9 +114,8 @@ namespace vbcc
         !add_primitive(None) || !add_primitive(Bool) || !add_primitive(I8) ||
         !add_primitive(I16) || !add_primitive(I32) || !add_primitive(I64) ||
         !add_primitive(U8) || !add_primitive(U16) || !add_primitive(U32) ||
-        !add_primitive(U64) || !add_primitive(ILong) ||
-        !add_primitive(ULong) || !add_primitive(ISize) ||
-        !add_primitive(USize) || !add_primitive(F32) ||
+        !add_primitive(U64) || !add_primitive(ILong) || !add_primitive(ULong) ||
+        !add_primitive(ISize) || !add_primitive(USize) || !add_primitive(F32) ||
         !add_primitive(F64) || !add_primitive(Ptr))
       {
         fail(state.top, "duplicate primitive runtime type metadata ID");
@@ -127,15 +125,14 @@ namespace vbcc
       for (const auto& [name, cls] : classes)
       {
         (void)name;
-        if (
-          !types
-             .emplace(
-               cls.type_id,
-               EmittedType{
-                 vrt::ValueType::object,
-                 module.getDataLayout().getPointerSize(),
-                 0})
-             .second)
+        if (!types
+               .emplace(
+                 cls.type_id,
+                 EmittedType{
+                   vrt::ValueType::object,
+                   module.getDataLayout().getPointerSize(),
+                   0})
+               .second)
         {
           fail(state.top, "duplicate nominal runtime type metadata ID");
           return false;

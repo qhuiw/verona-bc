@@ -77,10 +77,9 @@ namespace
         if (type.value_type == vrt::ValueType::array)
         {
           bool found = type_registry.contains(type.element_type_id);
-          for (
-            uintptr_t element_index = 0;
-            !found && (element_index < program.type_count);
-            element_index++)
+          for (uintptr_t element_index = 0;
+               !found && (element_index < program.type_count);
+               element_index++)
           {
             found = program.types[element_index].id == type.element_type_id;
           }
@@ -126,8 +125,7 @@ vrt::TypeLayout vrt::layout_type_id(uintptr_t type_id)
 {
   std::shared_lock guard(type_registry_mutex);
   auto type = type_registry.find(type_id);
-  internal_check(
-    type != type_registry.end(), Failure::invalid_program_state);
+  internal_check(type != type_registry.end(), Failure::invalid_program_state);
 
   return {type->second.value_type, type->second.storage_size};
 }

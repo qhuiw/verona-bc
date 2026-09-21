@@ -3,9 +3,9 @@
 #include "failure.h"
 #include "frame.h"
 #include "header.h"
-#include "thread_context.h"
 #include "region_arena.h"
 #include "region_rc.h"
+#include "thread_context.h"
 
 #include <limits>
 #include <new>

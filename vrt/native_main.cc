@@ -33,8 +33,7 @@ int main()
   vrt_error_info error{};
   if (!vrt_try_invoke(run_program, nullptr, &error))
   {
-    std::fprintf(
-      stderr, "runtime error: %s\n", vrt_error_message(error.code));
+    std::fprintf(stderr, "runtime error: %s\n", vrt_error_message(error.code));
     vrt_thread_deinit();
     return EXIT_FAILURE;
   }

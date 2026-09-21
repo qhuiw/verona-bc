@@ -106,8 +106,7 @@ int main()
   if (
     (frame_array->get_size() != 2) ||
     (frame_array->get_stride() != sizeof(uint32_t)) ||
-    (frame_array->reference_count != 1) ||
-    (frame_region->header_count() != 1))
+    (frame_array->reference_count != 1) || (frame_region->header_count() != 1))
     return 3;
 
   vrt_array_retain(frame_payload);
@@ -120,11 +119,10 @@ int main()
     return 5;
 
   ValuePayload locator_args{17};
-  auto* locator_payload = vrt_object_region(
-    vrt::RegionType::rc, &value_class, 1, &locator_args);
+  auto* locator_payload =
+    vrt_object_region(vrt::RegionType::rc, &value_class, 1, &locator_args);
   auto* locator = object_from_payload(locator_payload);
-  auto* heap_payload =
-    vrt_array_heap(locator_payload, scalar_array_type_id, 3);
+  auto* heap_payload = vrt_array_heap(locator_payload, scalar_array_type_id, 3);
   auto* heap_array = static_cast<vrt::Array*>(
     vrt::Value{vrt::ValueType::array, heap_payload}.header());
   if (
@@ -174,8 +172,7 @@ int main()
     return 9;
 
   uint32_t fill = 7;
-  vrt_array_fill(
-    scalar_payload, 0, scalar_array->get_size(), &fill);
+  vrt_array_fill(scalar_payload, 0, scalar_array->get_size(), &fill);
   if (
     (scalar_values[0] != 7) || (scalar_values[1] != 7) ||
     (scalar_values[2] != 7) || (scalar_values[3] != 7))
@@ -194,18 +191,14 @@ int main()
   auto* scalar_copy = frame_region->array(scalar_array_type_id, 4);
   auto* scalar_copy_payload = scalar_copy->get_payload();
   vrt_array_copy(scalar_copy_payload, 0, scalar_payload, 0, 4);
-  if (
-    vrt_array_compare(
-      scalar_copy_payload, 0, scalar_payload, 0, 4) != 0)
+  if (vrt_array_compare(scalar_copy_payload, 0, scalar_payload, 0, 4) != 0)
     return 24;
 
   // Match VBCI's no-op contract: zero-length bulk operations do not inspect
   // offsets or fill values.
   vrt_array_copy(scalar_payload, 99, scalar_copy_payload, 99, 0);
   vrt_array_fill(scalar_payload, 99, 0, nullptr);
-  if (
-    vrt_array_compare(
-      scalar_payload, 99, scalar_copy_payload, 99, 0) != 0)
+  if (vrt_array_compare(scalar_payload, 99, scalar_copy_payload, 99, 0) != 0)
     return 25;
 
   scalar_array->reg_dec();
@@ -221,8 +214,7 @@ int main()
     0, sizeof(void*), value_class_id, vrt::ValueType::object};
   vrt::writebarrier::init(
     frame_region, object_array->load(0), object_element, &array_value);
-  vrt_array_fill(
-    object_array->get_payload(), 1, 2, object_array->load(0));
+  vrt_array_fill(object_array->get_payload(), 1, 2, object_array->load(0));
 
   uintptr_t traced = 0;
   object_array->trace_fn([&](vrt::Header* element) {
@@ -288,14 +280,10 @@ int main()
   auto* dragged_array = static_cast<vrt::Array*>(
     vrt::Value{vrt::ValueType::array, dragged_payload}.header());
   ValuePayload dragged_value_args{43};
-  auto* dragged_value =
-    vrt_object_new(&value_class, 1, &dragged_value_args);
+  auto* dragged_value = vrt_object_new(&value_class, 1, &dragged_value_args);
   auto* dragged_value_header = object_from_payload(dragged_value);
   vrt::writebarrier::init(
-    array_frame_region,
-    dragged_array->load(0),
-    object_element,
-    &dragged_value);
+    array_frame_region, dragged_array->load(0), object_element, &dragged_value);
   vrt_array_escape(dragged_payload);
 
   if (

@@ -123,8 +123,7 @@ int main()
     vrt::header_from_payload(vrt::ValueType::array, frame_array_payload));
   if (
     (frame_array->region() != frame_region) ||
-    !frame_region->contains(frame_array) ||
-    (frame_region->header_count() != 1))
+    !frame_region->contains(frame_array) || (frame_region->header_count() != 1))
     return 18;
 
   vrt_array_release(frame_array_payload);
@@ -383,8 +382,7 @@ int main()
   auto* cleanup_child_region = object_from_payload(cleanup_child)->region();
   vrt_object_retain(cleanup_child);
   HolderPayload frame_cleanup_args{cleanup_child, 18};
-  auto* frame_cleanup =
-    vrt_object_new(&holder_class, 2, &frame_cleanup_args);
+  auto* frame_cleanup = vrt_object_new(&holder_class, 2, &frame_cleanup_args);
   if (
     (object_from_payload(frame_cleanup)->region() != frame_region) ||
     (frame_region->header_count() != 1) ||

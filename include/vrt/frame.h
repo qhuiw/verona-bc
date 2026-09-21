@@ -30,11 +30,10 @@ typedef struct vrt_frame vrt_frame;
    * vrt_error_info, it must also remain alive while that record is inspected.
    *
    * A logical thread must already be bound to this native thread by libvrt.
-  * Failure to allocate a frame or assign its stack Location terminates the
+   * Failure to allocate a frame or assign its stack Location terminates the
    * process.
    */
-  VRT_EXPORT vrt_frame*
-  vrt_frame_enter(const vrt_func* func);
+  VRT_EXPORT vrt_frame* vrt_frame_enter(const vrt_func* func);
 
   /**
    * Leave and destroy the current logical frame.
@@ -46,7 +45,7 @@ typedef struct vrt_frame vrt_frame;
   /**
    * Reuse the current logical frame for an immediately following tailcall.
    *
-  * The current frame keeps its stack Location, parent, region, and teardown
+   * The current frame keeps its stack Location, parent, region, and teardown
    * boundaries. Its function metadata is replaced before this function
    * returns; the tailcalled function must not enter another frame.
    *
@@ -54,22 +53,21 @@ typedef struct vrt_frame vrt_frame;
    * before calling this function. func may be null; non-null function
    * metadata must remain alive until the frame is left or rebound again.
    */
-  VRT_EXPORT void
-  vrt_frame_reuse(const vrt_func* func);
+  VRT_EXPORT void vrt_frame_reuse(const vrt_func* func);
 
   /**
-  * Return the raw Location encoding of the current frame's raise target.
+   * Return the raw Location encoding of the current frame's raise target.
    *
    * The calling native thread must have a current logical frame.
    */
   VRT_EXPORT uint64_t vrt_frame_get_raise_target(void);
 
   /**
-  * Replace the current logical frame's raw Location raise target and return
-  * the old encoding.
+   * Replace the current logical frame's raw Location raise target and return
+   * the old encoding.
    *
-  * target is stored without validation. vrt_frame_raise validates that it is
-  * a stack Location naming an active ancestor when a raise is performed. The
+   * target is stored without validation. vrt_frame_raise validates that it is
+   * a stack Location naming an active ancestor when a raise is performed. The
    * calling native thread must have a current logical frame and no pending
    * tailcall.
    */
@@ -100,8 +98,8 @@ typedef struct vrt_frame vrt_frame;
   /**
    * Consume the value associated with a raise resumed in the current frame.
    *
-  * Calling this unless the current frame has just been resumed by a raise, or
-  * consuming the same payload twice, terminates the process.
+   * Calling this unless the current frame has just been resumed by a raise, or
+   * consuming the same payload twice, terminates the process.
    */
   VRT_EXPORT uint64_t vrt_frame_take_raised_value(void);
 

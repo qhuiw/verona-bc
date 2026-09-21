@@ -1,5 +1,6 @@
-#include "object.h"
 #include "program.h"
+
+#include "object.h"
 #include "vrt.h"
 
 #include <cstddef>
@@ -29,8 +30,7 @@ namespace
     0,
     nullptr,
     singleton_storage + vrt::Object::singleton_payload_offset()};
-  const vrt::Singleton singletons[] = {
-    {singleton_storage, &singleton_class}};
+  const vrt::Singleton singletons[] = {{singleton_storage, &singleton_class}};
   const vrt::Program program{3, types, 1, singletons};
 }
 

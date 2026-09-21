@@ -126,11 +126,11 @@ namespace vbcc
       bool emit_const_nan(const Node& statement);
 
       // wfTerminator emitters, in token order.
-      bool emit_terminator(
-        const Node& terminator, const LoweredType& return_type);
+      bool
+      emit_terminator(const Node& terminator, const LoweredType& return_type);
       bool emit_tailcall(const Node& statement, const LoweredType& return_type);
-      bool emit_tailcall_dyn(
-        const Node& statement, const LoweredType& return_type);
+      bool
+      emit_tailcall_dyn(const Node& statement, const LoweredType& return_type);
       bool emit_return(const Node& statement, const LoweredType& return_type);
       bool emit_raise(const Node& statement);
       bool emit_cond(const Node& statement);
@@ -155,14 +155,14 @@ namespace vbcc
         const Node& args, const std::vector<LoweredValue>& values);
 
       // Callable helpers.
-      std::optional<llvm::Value*> emit_callable_entry(
-        const Node& statement, const LoweredValue& callable);
+      std::optional<llvm::Value*>
+      emit_callable_entry(const Node& statement, const LoweredValue& callable);
 
       // Frame management.
       bool
       emit_enter_frame(const Node& statement, llvm::Value* function_descriptor);
-      bool emit_reuse_frame(
-        const Node& statement, llvm::Value* function_descriptor);
+      bool
+      emit_reuse_frame(const Node& statement, llvm::Value* function_descriptor);
       bool emit_leave_frame(const Node& statement);
 
       // Raise handling.

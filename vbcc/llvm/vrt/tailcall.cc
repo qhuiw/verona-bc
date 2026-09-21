@@ -7,9 +7,7 @@ namespace vbcc
     bool LLVMCodegen::emit_reuse_frame(
       const Node& statement, llvm::Value* function_descriptor)
     {
-      if (
-        (runtime.frame_reuse == nullptr) ||
-        (function_descriptor == nullptr))
+      if ((runtime.frame_reuse == nullptr) || (function_descriptor == nullptr))
       {
         fail(statement, "LLVM tailcall runtime context is unavailable");
         return false;

@@ -16,8 +16,7 @@ namespace vbcc
         region == RegionRC ? vrt::RegionType::rc : vrt::RegionType::arena;
       auto* value = llvm::ConstantInt::get(
         llvm::Type::getInt8Ty(context), static_cast<unsigned>(region_type));
-      return emit_array_allocation(
-        statement, runtime.array_region, {value});
+      return emit_array_allocation(statement, runtime.array_region, {value});
     }
   }
 }

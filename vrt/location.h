@@ -108,6 +108,5 @@ namespace vrt
       assert(is_stack());
       return (value - Stack) / FrameInc;
     }
-
   };
 }

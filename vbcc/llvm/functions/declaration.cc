@@ -69,8 +69,7 @@ namespace vbcc
           id,
           LoweredFunction{
             function,
-            LoweredSignature{
-              *lowered_return, std::move(*lowered_params)}});
+            LoweredSignature{*lowered_return, std::move(*lowered_params)}});
       }
     }
   }

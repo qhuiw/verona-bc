@@ -38,11 +38,10 @@ namespace vbcc
                                 Le,  Gt,  Ge,  Min, Max, LogBase, Atan2}))
         return emit_binop(statement);
 
-      if (statement->type().in({Neg,  Not,     Abs,   Ceil,  Floor, Exp,
-                                Log,  Sqrt,    Cbrt,  IsInf, IsNaN, Sin,
-                                Cos,  Tan,     Asin,  Acos,  Atan,  Sinh,
-                                Cosh, Tanh,    Asinh, Acosh, Atanh, Bits,
-                                Len,  MakePtr, Read}))
+      if (statement->type().in(
+            {Neg,   Not,   Abs,   Ceil,  Floor, Exp,  Log,  Sqrt,    Cbrt,
+             IsInf, IsNaN, Sin,   Cos,   Tan,   Asin, Acos, Atan,    Sinh,
+             Cosh,  Tanh,  Asinh, Acosh, Atanh, Bits, Len,  MakePtr, Read}))
         return emit_unop(statement);
 
       if (statement == Copy)

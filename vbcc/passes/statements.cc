@@ -538,14 +538,10 @@ namespace vbcc
 
         // Bulk array operations.
         Dst * T(ArrayCopy)[Type] * CallArgs[Args] >>
-          [](Match& _) {
-            return ArrayCopy << _(LocalId) << callargs(_[Args]);
-          },
+          [](Match& _) { return ArrayCopy << _(LocalId) << callargs(_[Args]); },
 
         Dst * T(ArrayFill)[Type] * CallArgs[Args] >>
-          [](Match& _) {
-            return ArrayFill << _(LocalId) << callargs(_[Args]);
-          },
+          [](Match& _) { return ArrayFill << _(LocalId) << callargs(_[Args]); },
 
         Dst * T(ArrayCompare)[Type] * CallArgs[Args] >>
           [](Match& _) {

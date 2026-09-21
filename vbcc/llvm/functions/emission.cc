@@ -77,7 +77,7 @@ namespace vbcc
       if (!emit_raise_continuation(
             func,
             blocks.get(labels->front() / LabelId),
-        lowered.signature.return_type))
+            lowered.signature.return_type))
         return false;
 
       for (const auto& label : *labels)

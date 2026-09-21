@@ -1,8 +1,8 @@
 #include "frame.h"
 
 #include "failure.h"
-#include "thread_context.h"
 #include "region.h"
+#include "thread_context.h"
 
 #include <limits>
 #include <new>
@@ -109,8 +109,7 @@ extern "C" VRT_EXPORT void* vrt_frame_raise_continuation(void)
   return continuation->state;
 }
 
-extern "C" VRT_EXPORT void
-vrt_frame_raise(vrt_value_type type, uint64_t value)
+extern "C" VRT_EXPORT void vrt_frame_raise(vrt_value_type type, uint64_t value)
 {
   auto& context = vrt::ThreadContext::get();
   auto* frame = context.thread.frame;
@@ -150,8 +149,8 @@ extern "C" VRT_EXPORT uint64_t vrt_frame_id(const vrt_frame* frame)
   return frame->frame_id.raw();
 }
 
-extern "C" VRT_EXPORT const vrt::Function* vrt_frame_func(
-  const vrt_frame* frame)
+extern "C" VRT_EXPORT const vrt::Function*
+vrt_frame_func(const vrt_frame* frame)
 {
   if (frame == nullptr)
     return nullptr;
