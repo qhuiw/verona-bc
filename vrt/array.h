@@ -46,6 +46,13 @@ namespace vrt
       return size;
     }
 
+    void set_size(uintptr_t new_size)
+    {
+      // Match VBCI: callers may only shrink an array's apparent size.
+      if (new_size < size)
+        size = new_size;
+    }
+
     uintptr_t get_stride() const
     {
       return stride;

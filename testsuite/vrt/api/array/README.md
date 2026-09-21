@@ -8,6 +8,7 @@ ABI together with the private representation needed to validate its effects.
 - Frame-local `new`, existing-region `heap`, and fresh-region allocation.
 - Compiler-emitted array type metadata and element-layout lookup.
 - Contiguous zero-initialized element storage and payload/header conversion.
+- Shrinking an array's apparent size without allowing subsequent growth.
 - Register retain/release and collection through generic `Header` dispatch.
 - Managed object and nested-array element tracing and finalization.
 - Graph dragging when an array is returned or raised across frame teardown.

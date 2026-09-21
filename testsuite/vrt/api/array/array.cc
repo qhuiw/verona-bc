@@ -194,6 +194,11 @@ int main()
   if (vrt_array_compare(scalar_copy_payload, 0, scalar_payload, 0, 4) != 0)
     return 24;
 
+  scalar_copy->set_size(3);
+  scalar_copy->set_size(4);
+  if (scalar_copy->get_size() != 3)
+    return 29;
+
   // Match VBCI's no-op contract: zero-length bulk operations do not inspect
   // offsets or fill values.
   vrt_array_copy(scalar_payload, 99, scalar_copy_payload, 99, 0);
