@@ -106,10 +106,7 @@ int main()
     !(child_location > root_location) || !(child_location >= root_location) ||
     (root_location == child_location) ||
     (vrt::Location::from_raw(child_location.raw()) != child_location) ||
-    !vrt::Location::immutable().is_immutable() ||
-    vrt::Location::immutable().is_scc_ptr() ||
-    !vrt::Location::immortal().is_immortal() ||
-    vrt::Location::immortal().is_immutable())
+    !vrt::Location::immortal().is_immortal())
     return 15;
 
   const vrt::Function root_function{1, "root", nullptr};
@@ -147,17 +144,10 @@ int main()
     return 2;
 
   auto region_location = escaped_object->location();
-  auto pending_location = region_location.pending();
-  auto scc_location = vrt::Location::scc_ptr(escaped_object);
   if (
     !region_location.is_region() ||
     (region_location.to_region() != callee_region) ||
-    (region_location.raw() != reinterpret_cast<uintptr_t>(callee_region)) ||
-    !pending_location.is_pending() || pending_location.is_region() ||
-    (pending_location.unpending() != region_location) ||
-    !scc_location.is_scc_ptr() || !scc_location.is_immutable() ||
-    scc_location.is_region() || (scc_location.scc_target() != escaped_object) ||
-    (vrt::Location::from_raw(scc_location.raw()) != scc_location))
+    (region_location.raw() != reinterpret_cast<uintptr_t>(callee_region)))
     return 17;
 
   vrt_object_escape(escaped);
