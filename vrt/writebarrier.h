@@ -1,5 +1,7 @@
 #pragma once
 
+#include "location.h"
+
 #include <vrt/object.h>
 
 namespace vrt
@@ -13,14 +15,20 @@ namespace vrt::writebarrier
 {
   /** Consume one field-layout argument into a newly allocated field. */
   void init(
-    Region* store_region, void* target, const Field& field, const void* source);
+    Location store_location,
+    void* target,
+    const Field& field,
+    const void* source);
 
   /** Copy one encoded value over an existing field or array element. */
   void copy(
-    Region* store_region, void* target, const Field& field, const void* source);
+    Location store_location,
+    void* target,
+    const Field& field,
+    const void* source);
 
   /** Drop a field while finalizing its containing object. */
-  void drop(Region* store_region, const Field& field, void* source);
+  void drop(Location store_location, const Field& field, void* source);
 
   /** Drag a frame-local object/array graph to an older or non-frame region. */
   bool

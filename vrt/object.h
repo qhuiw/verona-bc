@@ -41,6 +41,9 @@ namespace vrt
     void finalize();
     void destroy_storage();
 
+    template<typename F>
+    void trace_fn(F&& function);
+
     void* fields()
     {
       return this + 1;

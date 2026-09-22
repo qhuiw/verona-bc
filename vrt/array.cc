@@ -1,6 +1,8 @@
 #include "array.h"
 
+#include "error.h"
 #include "failure.h"
+#include "freeze.h"
 #include "program.h"
 #include "region.h"
 #include "value.h"
@@ -150,7 +152,7 @@ namespace vrt
       for (uintptr_t index = length; index > 0; index--)
       {
         writebarrier::copy(
-          region(),
+          location(),
           load(destination_offset + index - 1),
           element_descriptor,
           source->load(source_offset + index - 1));
@@ -161,7 +163,7 @@ namespace vrt
     for (uintptr_t index = 0; index < length; index++)
     {
       writebarrier::copy(
-        region(),
+        location(),
         load(destination_offset + index),
         element_descriptor,
         source->load(source_offset + index));
@@ -201,7 +203,7 @@ namespace vrt
     for (uintptr_t index = 0; index < length; index++)
     {
       writebarrier::copy(
-        region(),
+        location(),
         load(offset + index),
         element_descriptor,
         static_cast<const void*>(&data_address));
@@ -246,7 +248,7 @@ namespace vrt
 
     auto element_descriptor = element();
     for (uintptr_t index = 0; index < size; index++)
-      writebarrier::drop(region(), element_descriptor, load(index));
+      writebarrier::drop(location(), element_descriptor, load(index));
   }
 
   void Array::destroy_storage()
@@ -289,6 +291,13 @@ extern "C" VRT_EXPORT void vrt_array_retain(void* elements)
 extern "C" VRT_EXPORT void vrt_array_release(void* elements)
 {
   vrt::Value{vrt::ValueType::array, elements}.reg_dec();
+}
+
+extern "C" VRT_EXPORT void vrt_array_freeze(void* elements)
+{
+  auto* header = vrt::Value{vrt::ValueType::array, elements}.header();
+  if (!vrt::freeze(header))
+    vrt::raise_error(vrt::Error::bad_freeze);
 }
 
 extern "C" VRT_EXPORT void vrt_array_escape(void* elements)

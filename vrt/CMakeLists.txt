@@ -1,8 +1,10 @@
 add_library(libvrt STATIC
   array.cc
+  collect.cc
   error.cc
   exit_code.cc
   failure.cc
+  freeze.cc
   frame.cc
   function.cc
   header.cc

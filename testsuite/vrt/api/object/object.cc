@@ -33,15 +33,19 @@ namespace
      vrt::ValueType::scalar}};
 
   void singleton_first_method() {}
+  void singleton_finalizer() {}
   void singleton_method() {}
   void singleton_last_method() {}
   const vrt::Function singleton_first_function{
     0x300, "Singleton.first", &singleton_first_method};
+  const vrt::Function singleton_finalizer_function{
+    0x303, "Singleton.final", &singleton_finalizer};
   const vrt::Function singleton_function{
     0x301, "Singleton.method", &singleton_method};
   const vrt::Function singleton_last_function{
     0x302, "Singleton.last", &singleton_last_method};
   const vrt::Method singleton_methods[] = {
+    {vrt::Class::final_method_id, &singleton_finalizer_function},
     {0x101, &singleton_first_function},
     {0x201, &singleton_function},
     {0x301, &singleton_last_function}};
@@ -67,7 +71,7 @@ namespace
     1,
     0,
     nullptr,
-    3,
+    4,
     singleton_methods,
     singleton_storage + vrt::Object::singleton_data_offset()};
 
@@ -94,11 +98,15 @@ int main()
     (value_class.data_size != sizeof(ValueFields)) ||
     (value_class.data_alignment != alignof(ValueFields)) ||
     (value_class.field_count != 1) || (value_class.fields != value_fields) ||
-    (singleton_class.method_count != 3) ||
+    (singleton_class.method_count != 4) ||
     (singleton_class.methods != singleton_methods) ||
-    (singleton_methods[0].id != 0x101) || (singleton_methods[1].id != 0x201) ||
-    (singleton_methods[2].id != 0x301) ||
-    (singleton_methods[1].func != &singleton_function))
+    (singleton_methods[0].id != vrt::Class::final_method_id) ||
+    (singleton_methods[1].id != 0x101) || (singleton_methods[2].id != 0x201) ||
+    (singleton_methods[3].id != 0x301) ||
+    (singleton_methods[2].func != &singleton_function) ||
+    (singleton_class.method(0x101) != &singleton_first_function) ||
+    (singleton_class.method(0x202) != nullptr) ||
+    (singleton_class.finalizer() != &singleton_finalizer_function))
     return 1;
 
   const vrt::Function root_function{1, "root", nullptr};
@@ -211,10 +219,13 @@ int main()
     (singleton_object->reference_count != 1))
     return 7;
 
+  auto* finalizer =
+    vrt_object_lookup(singleton_new_object_data, vrt::Class::final_method_id);
   auto* first_callable = vrt_object_lookup(singleton_new_object_data, 0x101);
   auto* callable = vrt_object_lookup(singleton_new_object_data, 0x201);
   auto* last_callable = vrt_object_lookup(singleton_new_object_data, 0x301);
   if (
+    (finalizer != &singleton_finalizer_function) ||
     (first_callable != &singleton_first_function) ||
     (callable != &singleton_function) ||
     (last_callable != &singleton_last_function) ||

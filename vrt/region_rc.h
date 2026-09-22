@@ -31,5 +31,12 @@ namespace vrt
     bool begin_finalizing() override;
     void finalize_contents() override;
     void release_dead_objects() override;
+
+    template<typename F>
+    void trace_fn(F&& function) const;
+
+    /** The callback must not mutate this region's tracked-header set. */
+    template<typename F>
+    void for_each_header(F&& function) const;
   };
 }

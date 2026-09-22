@@ -1,5 +1,6 @@
 #include "region.h"
 
+#include "collect.h"
 #include "failure.h"
 #include "frame.h"
 #include "header.h"
@@ -154,17 +155,7 @@ namespace vrt
 
   void destroy_region(Region* region)
   {
-    if ((region == nullptr) || region->destroying)
-      return;
-
-    internal_check(region->parent == nullptr, Failure::invalid_region_state);
-
-    region->destroying = true;
-    const bool began_finalizing = region->begin_finalizing();
-    internal_check(began_finalizing, Failure::invalid_region_state);
-
-    region->finalize_contents();
-    region->release_dead_objects();
+    collect(region);
   }
 
   void destroy_frame_region(Frame* frame)

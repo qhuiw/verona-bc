@@ -58,7 +58,9 @@ function(vrt_add_fixture_test test)
   endif()
 
   target_link_libraries(${target} PRIVATE vbc::vrt)
-  if(category STREQUAL "api" AND fixture_name STREQUAL "thread")
+  if(
+    (category STREQUAL "api" AND fixture_name STREQUAL "thread") OR
+    (category STREQUAL "internal" AND fixture_name STREQUAL "scc"))
     target_link_libraries(${target} PRIVATE Threads::Threads)
   endif()
 

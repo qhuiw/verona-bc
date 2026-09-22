@@ -4,6 +4,7 @@
 #include "frame.h"
 #include "object.h"
 #include "region_arena.h"
+#include "region_ext.h"
 #include "region_rc.h"
 
 #include <cstddef>
@@ -183,6 +184,29 @@ int main()
     !dragged_region->contains(dragged_object) ||
     !dragged_region->contains(dragged_holder_object))
     return 3;
+
+  uintptr_t holder_edges = 0;
+  dragged_holder_object->trace_fn([&](vrt::Header* child) {
+    if (child == dragged_object)
+      holder_edges++;
+  });
+  uintptr_t dispatched_edges = 0;
+  static_cast<vrt::Header*>(dragged_holder_object)
+    ->trace_fn([&](vrt::Header* child) {
+      if (child == dragged_object)
+        dispatched_edges++;
+    });
+  uintptr_t region_headers = 0;
+  dragged_region->for_each_header([&](vrt::Header*) { region_headers++; });
+  uintptr_t region_edges = 0;
+  dragged_region->trace_fn([&](vrt::Header* child) {
+    if (child == dragged_object)
+      region_edges++;
+  });
+  if (
+    (holder_edges != 1) || (dispatched_edges != 1) || (region_headers != 2) ||
+    (region_edges != 1))
+    return 27;
 
   vrt_object_release(dragged_holder);
   if (frame_region->header_count() != 0)

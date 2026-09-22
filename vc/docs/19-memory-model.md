@@ -208,6 +208,7 @@ The runtime detects several region and reference errors at runtime:
 | `bad type` | Subtype check failed on call argument, return value, field store, or array store. |
 | `bad array index` | Array index out of bounds. |
 | `bad args` | Wrong number of arguments to a function or constructor. |
+| `bad freeze` | Freezing a stack-allocated value or an arena-managed region. |
 
 These errors are **fatal** — the current function (or behavior, in a `when` block) terminates immediately. They indicate logic bugs, not expected failure modes.
 
@@ -215,14 +216,27 @@ These errors are **fatal** — the current function (or behavior, in a `when` bl
 
 ## 19.9 Freezing (Immutability)
 
-> **Status:** Region freezing is being designed but not yet exposed at the language level.
+`freeze(value)` returns the same value after making its reachable managed graph
+immutable. Primitive values are copied unchanged. Freezing an already immutable
+or immortal value is a no-op. `let` still constrains only a binding; `freeze`
+changes the managed objects themselves.
 
-When implemented, freezing will convert a mutable region into an **immutable snapshot** that can be shared freely:
-- No reference counting overhead for reads — immutable objects use atomic reference counting on the group.
-- No mutable references into the region can exist after freezing.
-- Immutable objects can be shared between threads without synchronization.
+The runtime discovers strongly connected components (SCCs) in the reachable
+graph. Every published SCC has one representative with an atomic reference
+count (ARC); other members point directly to that representative. References
+within an SCC do not keep it alive. References from registers, mutable objects,
+and other immutable SCCs contribute to the representative's ARC. When it
+reaches zero, the collector reclaims the whole component.
 
-Currently, all user-created objects are mutable. `let` constrains only the binding — see [Declarations §4.1](04-declarations.md) and [Gotchas §26.2](26-gotchas.md).
+Freezing may select only the reachable part of an RC region. Unreached mutable
+objects remain in that region, and their references into the frozen graph are
+included in ARC accounting. Reachable frame-local objects and heap subregions
+are also handled. The native runtime rejects stack-allocated roots and arena
+regions with `bad freeze`: arena objects deliberately omit the per-object
+counts needed to derive correct SCC reference counts.
+
+Writes into immutable storage raise `bad store target`. Reads need no locks;
+only changes to the published SCC's ARC are atomic.
 
 ---
 
@@ -239,10 +253,19 @@ See [Concurrency](15-concurrency.md) for the user-facing semantics of cowns.
 ## 19.11 Object Teardown
 
 When a region is collected or a frame is unwound, objects are torn down:
-1. Finalizers run (releasing child region references, cown references, etc.)
-2. Object memory is freed.
+1. A user-defined `final(self: T)` method runs, if present.
+2. Managed fields are dropped, releasing outgoing references.
+3. Object storage is freed.
 
-There are no user-defined destructors or finalizers in the language. Resource cleanup is managed entirely by the runtime through region deallocation and reference counting.
+Collection is two-phase: all queued objects finish steps 1 and 2 before any of
+their storage is released. This lets a finalizer inspect another object that is
+being collected in the same batch. A finalizer receives borrowed, read-only
+`self`; it cannot resurrect the object or prevent collection.
+
+If a native finalizer raises a runtime error, the runtime reports that error,
+restores the caller's cleanup boundary, and continues dropping fields and
+releasing storage. This boundary contains cleanup failures; it is not a
+source-level exception handler.
 
 ---
 
@@ -253,10 +276,6 @@ Several memory model features are actively being designed:
 ### Explicit Region Syntax
 
 Currently, regions are created implicitly (frame-local regions per function call, heap regions via cowns). The planned feature will allow programmers to explicitly create and manage regions, enabling patterns like sendable subgraphs and region transfer between cowns.
-
-### Region Freezing
-
-Freezing will convert a mutable region into a permanently immutable snapshot. Once frozen, the region can be shared freely without synchronization overhead. This is the mechanism for true immutability — unlike `let` (which only constrains the binding), freezing makes the object graph itself immutable.
 
 ### Compile-Time Region Safety
 

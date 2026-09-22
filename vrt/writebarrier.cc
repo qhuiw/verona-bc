@@ -3,15 +3,17 @@
 #include "array.h"
 #include "error.h"
 #include "failure.h"
+#include "frame.h"
 #include "header.h"
 #include "object.h"
 #include "region.h"
+#include "region_ext.h"
+#include "thread_context.h"
 #include "value.h"
 
 #include <cstring>
 #include <limits>
 #include <unordered_map>
-#include <utility>
 #include <vector>
 
 namespace
@@ -38,49 +40,73 @@ namespace
     std::memcpy(target, &data_address, sizeof(data_address));
   }
 
-  template<typename F>
-  void trace_object(vrt::Object* object, F&& function)
+  vrt::Region* frame_region_for_stack(vrt::Location location)
   {
-    auto* cls = object->cls;
-    auto* fields = static_cast<std::byte*>(object->fields());
-    for (uintptr_t index = 0; index < cls->field_count; index++)
-    {
-      const auto& field = cls->fields[index];
-      if (!vrt::is_header_type(field.value_type))
-        continue;
+    internal_check(location.is_stack(), vrt::Failure::invalid_write);
 
-      auto* child = load_header(field.value_type, fields + field.offset);
-      if (child != nullptr)
-        function(child);
+    auto* context = vrt::ThreadContext::try_get();
+    internal_check(context != nullptr, vrt::Failure::invalid_write);
+
+    auto* frame = context->thread.frame;
+    while ((frame != nullptr) && (frame->frame_id != location))
+      frame = frame->parent;
+
+    internal_check(frame != nullptr, vrt::Failure::invalid_write);
+    return vrt::frame_region(frame);
+  }
+
+  vrt::Region* store_region(vrt::Location location)
+  {
+    if (location.is_region())
+      return location.to_region();
+
+    if (location.is_stack())
+      return frame_region_for_stack(location);
+
+    return nullptr;
+  }
+
+  bool is_frame_storage(vrt::Location location)
+  {
+    return location.is_stack() ||
+      (location.is_region() && location.to_region()->is_frame_local());
+  }
+
+  void
+  validate_store(vrt::Location location, const void* target, const void* source)
+  {
+    internal_check(
+      (target != nullptr) && (source != nullptr), vrt::Failure::invalid_write);
+
+    if (location.is_immutable() || location.is_immortal())
+      vrt::raise_error(vrt::Error::bad_store_target);
+
+    internal_check(
+      location.is_stack() || location.is_region(), vrt::Failure::invalid_write);
+
+    if (location.is_region())
+    {
+      auto* region = location.to_region();
+      internal_check(
+        !region->destroying && !region->is_finalizing(),
+        vrt::Failure::invalid_write);
     }
   }
 
-  template<typename F>
-  void trace_header(vrt::Header* header, F&& function)
-  {
-    switch (header->value_type())
-    {
-      case vrt::ValueType::object:
-        trace_object(
-          static_cast<vrt::Object*>(header), std::forward<F>(function));
-        return;
-
-      case vrt::ValueType::array:
-        static_cast<vrt::Array*>(header)->trace_fn(std::forward<F>(function));
-        return;
-
-      default:
-        vrt::fail(vrt::Failure::invalid_header_state);
-    }
-  }
-
-  void drop_header(vrt::Region* store_region, vrt::Header* outgoing)
+  void drop_header(vrt::Location store_location, vrt::Header* outgoing)
   {
     if (outgoing == nullptr)
       return;
 
-    if (outgoing->location().is_immortal())
+    const auto outgoing_location = outgoing->location();
+    if (outgoing_location.is_immortal() || outgoing_location.is_stack())
       return;
+
+    if (outgoing_location.is_immutable())
+    {
+      outgoing->field_dec();
+      return;
+    }
 
     auto* outgoing_region = outgoing->region();
     internal_check(outgoing_region != nullptr, vrt::Failure::invalid_write);
@@ -91,13 +117,13 @@ namespace
       return;
     }
 
-    if (store_region->is_frame_local())
+    if (is_frame_storage(store_location))
     {
       outgoing_region->stack_dec();
       return;
     }
 
-    if (store_region == outgoing_region)
+    if (store_location == outgoing_location)
     {
       outgoing->field_dec();
       return;
@@ -116,13 +142,12 @@ namespace
 namespace vrt::writebarrier
 {
   void init(
-    Region* store_region, void* target, const Field& field, const void* source)
+    Location store_location,
+    void* target,
+    const Field& field,
+    const void* source)
   {
-    internal_check(
-      (store_region != nullptr) && !store_region->destroying &&
-        !store_region->is_finalizing() && (target != nullptr) &&
-        (source != nullptr),
-      Failure::invalid_write);
+    validate_store(store_location, target, source);
 
     if (!is_header_type(field.value_type))
     {
@@ -136,7 +161,8 @@ namespace vrt::writebarrier
         (incoming->get_type_id() == field.type_id),
       Failure::invalid_write);
 
-    if (incoming->location().is_immortal())
+    const auto incoming_location = incoming->location();
+    if (incoming_location.is_immortal() || incoming_location.is_immutable())
     {
       store_header(target, incoming);
       return;
@@ -149,11 +175,16 @@ namespace vrt::writebarrier
 
     if (incoming_region->is_frame_local())
     {
-      const bool must_drag = !store_region->is_frame_local() ||
-        ((store_region != incoming_region) &&
-         (store_region->frame_depth < incoming_region->frame_depth));
+      auto* destination = store_region(store_location);
+      const bool must_drag =
+        (store_location.is_stack() &&
+         (store_location.stack_index() < incoming_region->frame_depth)) ||
+        (store_location.is_region() &&
+         (!destination->is_frame_local() ||
+          ((destination != incoming_region) &&
+           (destination->frame_depth < incoming_region->frame_depth))));
 
-      if (must_drag && !drag(store_region, incoming))
+      if (must_drag && !drag(destination, incoming))
         raise_error(Error::bad_store);
 
       store_header(target, incoming);
@@ -163,13 +194,14 @@ namespace vrt::writebarrier
     // A reference stored in a frame-local region remains an external root of
     // the incoming heap region. Moving it out of the argument register and
     // into the field therefore leaves stack_reference_count unchanged.
-    if (store_region->is_frame_local())
+    if (is_frame_storage(store_location))
     {
       store_header(target, incoming);
       return;
     }
 
-    if (store_region == incoming_region)
+    auto* destination = store_location.to_region();
+    if (destination == incoming_region)
     {
       store_header(target, incoming);
       const bool incoming_region_alive = incoming_region->stack_dec();
@@ -180,26 +212,25 @@ namespace vrt::writebarrier
 
     if (
       incoming_region->has_parent() ||
-      incoming_region->is_ancestor_of(store_region))
+      incoming_region->is_ancestor_of(destination))
       raise_error(Error::bad_alloc_target);
 
     // Establish ownership before consuming the stack reference. A child with
     // one stack reference is allowed to transition to zero only after it has
     // a parent.
-    incoming_region->set_parent(store_region, incoming);
+    incoming_region->set_parent(destination, incoming);
     store_header(target, incoming);
     const bool incoming_region_alive = incoming_region->stack_dec();
     internal_check(incoming_region_alive, Failure::invalid_write);
   }
 
   void copy(
-    Region* store_region, void* target, const Field& field, const void* source)
+    Location store_location,
+    void* target,
+    const Field& field,
+    const void* source)
   {
-    internal_check(
-      (store_region != nullptr) && !store_region->destroying &&
-        !store_region->is_finalizing() && (target != nullptr) &&
-        (source != nullptr),
-      Failure::invalid_write);
+    validate_store(store_location, target, source);
 
     if (!is_header_type(field.value_type))
     {
@@ -213,7 +244,9 @@ namespace vrt::writebarrier
 
     internal_check(
       !incoming->finalizing && (incoming->get_type_id() == field.type_id) &&
-        ((incoming->region() != nullptr) || incoming->location().is_immortal()),
+        ((incoming->region() != nullptr) ||
+         incoming->location().is_immutable() ||
+         incoming->location().is_immortal()),
       Failure::invalid_write);
 
     if (incoming == outgoing)
@@ -222,7 +255,15 @@ namespace vrt::writebarrier
     if (incoming->location().is_immortal())
     {
       store_header(target, incoming);
-      drop_header(store_region, outgoing);
+      drop_header(store_location, outgoing);
+      return;
+    }
+
+    if (incoming->location().is_immutable())
+    {
+      incoming->field_inc();
+      store_header(target, incoming);
+      drop_header(store_location, outgoing);
       return;
     }
 
@@ -231,57 +272,62 @@ namespace vrt::writebarrier
 
     if (incoming_region->is_frame_local())
     {
-      const bool must_drag = !store_region->is_frame_local() ||
-        ((store_region != incoming_region) &&
-         (store_region->frame_depth < incoming_region->frame_depth));
+      auto* destination = store_region(store_location);
+      const bool must_drag =
+        (store_location.is_stack() &&
+         (store_location.stack_index() < incoming_region->frame_depth)) ||
+        (store_location.is_region() &&
+         (!destination->is_frame_local() ||
+          ((destination != incoming_region) &&
+           (destination->frame_depth < incoming_region->frame_depth))));
 
-      if (must_drag && !drag(store_region, incoming, false))
+      if (must_drag && !drag(destination, incoming, false))
         raise_error(Error::bad_store);
 
       incoming->field_inc();
       store_header(target, incoming);
-      drop_header(store_region, outgoing);
+      drop_header(store_location, outgoing);
       return;
     }
 
-    if (store_region->is_frame_local())
+    if (is_frame_storage(store_location))
     {
       incoming->field_inc();
       incoming_region->stack_inc();
       store_header(target, incoming);
-      drop_header(store_region, outgoing);
+      drop_header(store_location, outgoing);
       return;
     }
 
-    if (store_region == incoming_region)
+    auto* destination = store_location.to_region();
+    if (destination == incoming_region)
     {
       incoming->field_inc();
       store_header(target, incoming);
-      drop_header(store_region, outgoing);
+      drop_header(store_location, outgoing);
       return;
     }
 
     if (
       incoming_region->has_parent() ||
-      incoming_region->is_ancestor_of(store_region))
+      incoming_region->is_ancestor_of(destination))
       raise_error(Error::bad_store);
 
     incoming->field_inc();
-    incoming_region->set_parent(store_region, incoming);
+    incoming_region->set_parent(destination, incoming);
     store_header(target, incoming);
-    drop_header(store_region, outgoing);
+    drop_header(store_location, outgoing);
   }
 
-  void drop(Region* store_region, const Field& field, void* source)
+  void drop(Location store_location, const Field& field, void* source)
   {
     internal_check(
-      (store_region != nullptr) && (source != nullptr) &&
-        is_header_type(field.value_type),
+      (source != nullptr) && is_header_type(field.value_type),
       Failure::invalid_write);
 
     auto* outgoing = load_header(field.value_type, source);
     clear_header(source);
-    drop_header(store_region, outgoing);
+    drop_header(store_location, outgoing);
   }
 
   bool drag(Region* destination, Header* root, bool root_reference_is_move)
@@ -365,7 +411,7 @@ namespace vrt::writebarrier
       }
 
       internal_references.emplace(header, 1);
-      trace_header(header, [&](Header* child) { worklist.push_back(child); });
+      header->trace_fn([&](Header* child) { worklist.push_back(child); });
     }
 
     if (!root_reference_is_move)
