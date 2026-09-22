@@ -7,11 +7,15 @@
 namespace vrt
 {
   struct Region;
+  struct Header;
 
   struct Location
   {
     static constexpr auto Stack = uintptr_t(0x1);
+    static constexpr auto Immutable = uintptr_t(0x2);
+    static constexpr auto Pending = uintptr_t(0x3);
     static constexpr auto Immortal = uintptr_t(0x4);
+    static constexpr auto SccPtr = uintptr_t(0x5);
     static constexpr auto Mask = uintptr_t(0x7);
     static constexpr auto FrameInc = uintptr_t(0x8);
 
@@ -30,6 +34,11 @@ namespace vrt
     static constexpr Location stack()
     {
       return Location(Stack);
+    }
+
+    static constexpr Location immutable()
+    {
+      return Location(Immutable);
     }
 
     static constexpr Location immortal()
@@ -91,10 +100,38 @@ namespace vrt
       return (value & Mask) == Immortal;
     }
 
+    bool is_immutable() const
+    {
+      auto tag = value & Mask;
+      return tag == Immutable || tag == SccPtr;
+    }
+
+    bool is_scc_ptr() const
+    {
+      return (value & Mask) == SccPtr;
+    }
+
+    bool is_pending() const
+    {
+      return (value & Mask) == Pending;
+    }
+
     Region* to_region() const
     {
       assert(is_region());
       return reinterpret_cast<Region*>(value);
+    }
+
+    Location pending() const
+    {
+      assert(is_region());
+      return Location(value | Pending);
+    }
+
+    Location unpending() const
+    {
+      assert(is_pending());
+      return Location(value & ~Pending);
     }
 
     Location next_stack_level() const
@@ -107,6 +144,17 @@ namespace vrt
     {
       assert(is_stack());
       return (value - Stack) / FrameInc;
+    }
+
+    static Location scc_ptr(Header* header)
+    {
+      return Location(SccPtr | reinterpret_cast<uintptr_t>(header));
+    }
+
+    Header* scc_target() const
+    {
+      assert(is_scc_ptr());
+      return reinterpret_cast<Header*>(value & ~Mask);
     }
   };
 }

@@ -1,6 +1,7 @@
 #include "header.h"
 
 #include "array.h"
+#include "collect.h"
 #include "failure.h"
 #include "object.h"
 #include "program.h"
@@ -11,41 +12,108 @@
 
 namespace vrt
 {
-  namespace
-  {
-    void collect_header(Header* header)
-    {
-      if (
-        (header == nullptr) || header->location().is_immortal() ||
-        header->finalizing)
-        return;
-
-      auto* region = header->region();
-      if (
-        (region == nullptr) || region->destroying || region->is_finalizing() ||
-        region->is_arena())
-        return;
-
-      // Dropping a child-region field can decrement this region's final stack
-      // reference. Keep the region alive until this allocation has finished
-      // finalizing and its storage is no longer reachable by the collector.
-      region->stack_inc();
-
-      if (!region->remove(header))
-      {
-        region->stack_dec();
-        return;
-      }
-
-      header->finalize();
-      header->destroy_storage();
-      region->stack_dec();
-    }
-  }
-
   ValueType Header::value_type() const
   {
     return layout_type_id(type_id).value_type;
+  }
+
+  Header* Header::representative()
+  {
+    return const_cast<Header*>(
+      static_cast<const Header*>(this)->representative());
+  }
+
+  const Header* Header::representative() const
+  {
+    if (!loc.is_scc_ptr())
+      return this;
+
+    auto* result = loc.scc_target();
+    internal_check(
+      (result != this) && (result->location() == Location::immutable()),
+      Failure::invalid_header_state);
+    return result;
+  }
+
+  Header* Header::find(Header* header)
+  {
+    internal_check(header != nullptr, Failure::invalid_header_state);
+    if (!header->loc.is_scc_ptr())
+      return header;
+
+    auto* target = header->loc.scc_target();
+    auto* root = find(target);
+    if (root != target)
+      header->loc = Location::scc_ptr(root);
+
+    return root;
+  }
+
+  bool Header::try_begin_scc_collection()
+  {
+    bool expected = false;
+    return collecting_scc.compare_exchange_strong(
+      expected, true, std::memory_order_acq_rel, std::memory_order_relaxed);
+  }
+
+  bool Header::is_collecting_scc() const
+  {
+    return collecting_scc.load(std::memory_order_acquire);
+  }
+
+  RC Header::get_rc() const
+  {
+    return reference_count;
+  }
+
+  void Header::set_rc(RC value)
+  {
+    reference_count = value;
+  }
+
+  RC Header::get_arc() const
+  {
+    auto& count = const_cast<RC&>(reference_count);
+    return ARC{count}.load(std::memory_order_relaxed);
+  }
+
+  void Header::set_arc(RC value)
+  {
+    ARC{reference_count}.store(value, std::memory_order_relaxed);
+  }
+
+  void Header::inc_arc()
+  {
+    auto count = ARC{reference_count};
+    auto current = count.load(std::memory_order_relaxed);
+
+    do
+    {
+      internal_check(
+        current != std::numeric_limits<RC>::max(),
+        Failure::invalid_header_state);
+    } while (!count.compare_exchange_weak(
+      current,
+      current + 1,
+      std::memory_order_relaxed,
+      std::memory_order_relaxed));
+  }
+
+  bool Header::dec_arc()
+  {
+    auto count = ARC{reference_count};
+    auto current = count.load(std::memory_order_relaxed);
+
+    do
+    {
+      internal_check(current != 0, Failure::invalid_header_state);
+    } while (!count.compare_exchange_weak(
+      current,
+      current - 1,
+      std::memory_order_acq_rel,
+      std::memory_order_relaxed));
+
+    return current == 1;
   }
 
   Header* Header::from_data(ValueType value_type, const void* data_address)
@@ -115,8 +183,21 @@ namespace vrt
 
   void Header::field_inc()
   {
+    if (loc.is_scc_ptr())
+    {
+      representative()->field_inc();
+      return;
+    }
+
     if (loc.is_stack() || loc.is_immortal())
       return;
+
+    if (loc.is_immutable())
+    {
+      internal_check(!is_collecting_scc(), Failure::invalid_header_state);
+      inc_arc();
+      return;
+    }
 
     auto* region = this->region();
     if (
@@ -133,8 +214,25 @@ namespace vrt
 
   void Header::field_dec()
   {
+    if (loc.is_scc_ptr())
+    {
+      representative()->field_dec();
+      return;
+    }
+
     if (loc.is_stack() || loc.is_immortal())
       return;
+
+    if (loc.is_immutable())
+    {
+      if (is_collecting_scc())
+        return;
+
+      if (dec_arc())
+        collect_scc(this);
+
+      return;
+    }
 
     auto* region = this->region();
     if (
@@ -146,7 +244,7 @@ namespace vrt
 
     reference_count--;
     if (reference_count == 0)
-      collect_header(this);
+      collect(this);
   }
 
   void Header::finalize()

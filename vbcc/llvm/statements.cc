@@ -50,6 +50,9 @@ namespace vbcc
       if (statement == Move)
         return emit_move(statement);
 
+      if (statement == Freeze)
+        return emit_freeze(statement);
+
       if (statement == GetRaise)
         return emit_get_raise(statement);
 

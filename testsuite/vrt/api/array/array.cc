@@ -6,6 +6,7 @@
 #include "object.h"
 #include "program.h"
 #include "region.h"
+#include "region_ext.h"
 #include "region_rc.h"
 #include "value.h"
 #include "writebarrier.h"
@@ -217,6 +218,13 @@ int main()
     return 26;
 
   auto* object_array = frame_region->array(object_array_type_id, 3);
+  uintptr_t empty_traced = 0;
+  static_cast<vrt::Header*>(object_array)->trace_fn([&](vrt::Header*) {
+    empty_traced++;
+  });
+  if (empty_traced != 0)
+    return 30;
+
   ValueFields array_value_object_args{41};
   auto* array_value_object_data =
     vrt_object_new(&value_class, 1, &array_value_object_args);
@@ -224,14 +232,14 @@ int main()
   const vrt::Field object_element{
     0, sizeof(void*), value_class_id, vrt::ValueType::object};
   vrt::writebarrier::init(
-    frame_region,
+    vrt::Location(frame_region),
     object_array->load(0),
     object_element,
     &array_value_object_data);
   vrt_array_fill(object_array->elements(), 1, 2, object_array->load(0));
 
   uintptr_t traced = 0;
-  object_array->trace_fn([&](vrt::Header* element) {
+  static_cast<vrt::Header*>(object_array)->trace_fn([&](vrt::Header* element) {
     if (element == array_value_object)
       traced++;
   });
@@ -269,7 +277,7 @@ int main()
   const vrt::Field nested_element{
     0, sizeof(void*), scalar_array_type_id, vrt::ValueType::array};
   vrt::writebarrier::init(
-    frame_region,
+    vrt::Location(frame_region),
     nested_parent_array->load(0),
     nested_element,
     &nested_child_array_elements);
@@ -298,7 +306,7 @@ int main()
     vrt_object_new(&value_class, 1, &dragged_object_args);
   auto* dragged_object = object_from_data(dragged_object_data);
   vrt::writebarrier::init(
-    array_frame_region,
+    vrt::Location(array_frame_region),
     dragged_array->load(0),
     object_element,
     &dragged_object_data);

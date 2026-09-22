@@ -139,9 +139,10 @@ then registers their execution as named nodes:
   exported VRT API family per executable;
 - `vrt/behavior/{default-exit,set-exit,last-write-wins}` tests generated
   program exit behavior with expected statuses `0`, `7`, and `3`;
-- `vrt/internal/{failure,frame,location,region}` tests private diagnostics,
-  frame-region transitions, tagged location representation, and ownership
-  invariants.
+- `vrt/internal/{collect,failure,finalizer,frame,freeze,location,region,scc,writebarrier}`
+  tests collector queues, private diagnostics, finalizer cleanup, frame
+  transitions, Freeze/SCC lifetime, tagged locations, region ownership, and
+  write barriers.
 
 The API fixtures are hand-written stand-ins for generated native code. They
 call the same exported functions as generated code and provide the subset of
@@ -162,6 +163,12 @@ VRT functions, while internal fixtures directly test runtime invariants.
 
 The region test covers object and array allocation in frame-local regions,
 existing RC/arena regions, and fresh RC/arena regions.
+
+The collector-related internal fixtures divide ownership by abstraction:
+`collect` covers queued two-phase reclamation, `finalizer` covers thunk and
+cleanup ordering, `freeze` covers graph discovery and RC-to-ARC publication,
+`scc` covers published-component lifetime, and `writebarrier` covers immutable
+reference accounting and region-parent rejection.
 
 Each VRT node is a self-contained fixture whose source name matches
 its directory name and whose expected outputs are next to the source:

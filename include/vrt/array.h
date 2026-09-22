@@ -28,6 +28,9 @@ extern "C"
    */
   VRT_EXPORT void vrt_array_release(void* elements);
 
+  /** Make the graph reachable from an array deeply immutable. */
+  VRT_EXPORT void vrt_array_freeze(void* elements);
+
   /** Relocate a current-frame-local array so it can be returned safely. */
   VRT_EXPORT void vrt_array_escape(void* elements);
 

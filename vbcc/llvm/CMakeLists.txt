@@ -58,6 +58,7 @@ add_library(libvbcllvm STATIC
   statements/copy.cc
   statements/drop.cc
   statements/ffi.cc
+  statements/freeze.cc
   statements/get_raise.cc
   statements/move.cc
   statements/set_raise.cc

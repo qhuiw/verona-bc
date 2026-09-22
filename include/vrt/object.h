@@ -10,6 +10,9 @@
 #if defined(__cplusplus)
 namespace vrt
 {
+  /** C-callable entry point used by the runtime to finalize object data. */
+  using FinalizerThunk = void (*)(void*);
+
   /** Runtime representation of a field in generated object data. */
   struct Field
   {
@@ -34,6 +37,8 @@ namespace vrt
    */
   struct Class
   {
+    static constexpr uintptr_t final_method_id = 0;
+
     uintptr_t id;
     const char* name;
     uintptr_t data_size;
@@ -43,13 +48,21 @@ namespace vrt
     uintptr_t method_count;
     const Method* methods;
     void* singleton;
+    FinalizerThunk finalizer_thunk = nullptr;
+
+    const Function* method(uintptr_t method_id) const;
+    const Function* finalizer() const;
   };
 }
 
 using vrt_field = vrt::Field;
 using vrt_method = vrt::Method;
 using vrt_class = vrt::Class;
+using vrt_finalizer_thunk = vrt::FinalizerThunk;
 #else
+/** C-callable entry point used by the runtime to finalize object data. */
+typedef void (*vrt_finalizer_thunk)(void*);
+
 /** Runtime representation of a field in generated object data. */
 typedef struct vrt_field
 {
@@ -78,6 +91,7 @@ typedef struct vrt_class
   uintptr_t method_count;
   const vrt_method* methods;
   void* singleton;
+  vrt_finalizer_thunk finalizer_thunk;
 } vrt_class;
 
 #endif
@@ -140,6 +154,9 @@ extern "C"
 
   /** Consume one owning register reference to an object data address. */
   VRT_EXPORT void vrt_object_release(void* data_address);
+
+  /** Make the graph reachable from an object deeply immutable. */
+  VRT_EXPORT void vrt_object_freeze(void* data_address);
 
   /**
    * Relocate a current-frame-local object so it can be returned safely.

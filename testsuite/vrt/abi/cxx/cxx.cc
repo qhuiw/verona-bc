@@ -1,3 +1,8 @@
+// Coverage: C++ ABI aliases, enum correspondence, descriptor layouts,
+// exported function signatures, and linkage for every public VRT header.
+// Non-goals: runtime semantics belong to the API, behavior, and internal
+// fixtures.
+
 #include <cstdint>
 #include <type_traits>
 #include <vrt/array.h>
@@ -17,7 +22,20 @@ static_assert(std::is_same_v<vrt_error_info, vrt::ErrorInfo>);
 static_assert(std::is_same_v<vrt_invocation_function, vrt::InvocationFunction>);
 static_assert(
   std::is_same_v<std::underlying_type_t<vrt::Error>, std::uint32_t>);
+static_assert(VRT_ERROR_NONE == vrt::Error::none);
+static_assert(VRT_ERROR_BAD_RAISE_TARGET == vrt::Error::bad_raise_target);
+static_assert(VRT_ERROR_BAD_ALLOC_TARGET == vrt::Error::bad_alloc_target);
 static_assert(VRT_ERROR_BAD_ARRAY_INDEX == vrt::Error::bad_array_index);
+static_assert(VRT_ERROR_BAD_STORE_TARGET == vrt::Error::bad_store_target);
+static_assert(VRT_ERROR_BAD_STORE == vrt::Error::bad_store);
+static_assert(VRT_ERROR_METHOD_NOT_FOUND == vrt::Error::method_not_found);
+static_assert(VRT_ERROR_BAD_STACK_ESCAPE == vrt::Error::bad_stack_escape);
+static_assert(
+  VRT_ERROR_BAD_REGION_ENTRY_POINT == vrt::Error::bad_region_entry_point);
+static_assert(VRT_ERROR_BAD_FREEZE == vrt::Error::bad_freeze);
+static_assert(VRT_ERROR_BAD_MERGE == vrt::Error::bad_merge);
+static_assert(
+  VRT_ERROR_SCHEDULER_ALREADY_RUNNING == vrt::Error::scheduler_already_running);
 static_assert(
   std::is_same_v<std::underlying_type_t<vrt::RegionType>, std::uint8_t>);
 static_assert(VRT_REGION_RC == vrt::RegionType::rc);
@@ -27,6 +45,7 @@ static_assert(std::is_same_v<vrt_func, vrt::Function>);
 static_assert(std::is_same_v<vrt_field, vrt::Field>);
 static_assert(std::is_same_v<vrt_method, vrt::Method>);
 static_assert(std::is_same_v<vrt_class, vrt::Class>);
+static_assert(std::is_same_v<vrt_finalizer_thunk, vrt::FinalizerThunk>);
 static_assert(std::is_same_v<vrt_type, vrt::TypeInfo>);
 static_assert(std::is_same_v<vrt_singleton, vrt::Singleton>);
 static_assert(std::is_same_v<vrt_program, vrt::Program>);
@@ -80,6 +99,8 @@ static_assert(
 static_assert(
   std::is_same_v<decltype(vrt::Class{}.methods), const vrt::Method*>);
 static_assert(std::is_same_v<decltype(vrt::Class{}.singleton), void*>);
+static_assert(
+  std::is_same_v<decltype(vrt::Class{}.finalizer_thunk), vrt::FinalizerThunk>);
 static_assert(std::is_same_v<decltype(vrt::TypeInfo{}.id), std::uintptr_t>);
 static_assert(
   std::is_same_v<decltype(vrt::TypeInfo{}.value_type), vrt::ValueType>);
@@ -156,6 +177,7 @@ static_assert(std::is_same_v<
               void* (*)(vrt::RegionType, std::uintptr_t, std::uintptr_t)>);
 static_assert(std::is_same_v<decltype(&vrt_array_retain), void (*)(void*)>);
 static_assert(std::is_same_v<decltype(&vrt_array_release), void (*)(void*)>);
+static_assert(std::is_same_v<decltype(&vrt_array_freeze), void (*)(void*)>);
 static_assert(std::is_same_v<decltype(&vrt_array_escape), void (*)(void*)>);
 static_assert(std::is_same_v<
               decltype(&vrt_array_copy),
@@ -185,6 +207,7 @@ static_assert(std::is_same_v<
               const vrt_func* (*)(const void*, std::uintptr_t)>);
 static_assert(std::is_same_v<decltype(&vrt_object_retain), void (*)(void*)>);
 static_assert(std::is_same_v<decltype(&vrt_object_release), void (*)(void*)>);
+static_assert(std::is_same_v<decltype(&vrt_object_freeze), void (*)(void*)>);
 static_assert(std::is_same_v<decltype(&vrt_object_escape), void (*)(void*)>);
 
 extern "C" void verona_program_entry(void)

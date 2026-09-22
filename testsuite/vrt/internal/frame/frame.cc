@@ -1,3 +1,10 @@
+// Coverage: real frame IDs and reuse, raise-target selection, return/raise
+// escape relocation, frame-local teardown, and heap-region ownership release.
+// Native VRT coverage: Frame and Thread layout plus lifecycle integration with
+// actual frame-local and heap regions.
+// Non-goals: Location tag encoding and manufactured Pending/SccPtr states are
+// owned by the Location fixture; immutable transitions are tested by Freeze.
+
 #include "frame.h"
 
 #include "object.h"
@@ -13,16 +20,11 @@
 #include <type_traits>
 #include <vrt/program.h>
 
-static_assert(sizeof(vrt::Location) == sizeof(uintptr_t));
-static_assert(std::is_trivially_copyable_v<vrt::Location>);
-static_assert(!std::is_default_constructible_v<vrt::Location>);
 static_assert(
   std::is_same_v<decltype(vrt::Frame::raise_target), vrt::Location>);
 static_assert(std::is_same_v<decltype(vrt::Frame::frame_id), vrt::Location>);
 static_assert(std::is_same_v<decltype(vrt::Thread::frame), vrt::Frame*>);
 static_assert(sizeof(vrt::Thread) == sizeof(vrt::Frame*));
-static_assert(alignof(vrt::Region) > vrt::Location::Mask);
-static_assert(alignof(vrt::Header) > vrt::Location::Mask);
 
 namespace
 {
@@ -98,16 +100,6 @@ int main()
 
   auto root_location = vrt::Location::stack();
   auto child_location = root_location.next_stack_level();
-  if (
-    (root_location.raw() != 0x1) || (child_location.raw() != 0x9) ||
-    !root_location.is_stack() || root_location.is_region() ||
-    (root_location.stack_index() != 0) || (child_location.stack_index() != 1) ||
-    !(root_location < child_location) || !(root_location <= child_location) ||
-    !(child_location > root_location) || !(child_location >= root_location) ||
-    (root_location == child_location) ||
-    (vrt::Location::from_raw(child_location.raw()) != child_location) ||
-    !vrt::Location::immortal().is_immortal())
-    return 15;
 
   const vrt::Function root_function{1, "root", nullptr};
   const vrt::Function child_function{2, "child", nullptr};

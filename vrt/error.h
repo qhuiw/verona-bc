@@ -5,11 +5,22 @@
 
 namespace vrt
 {
-  /** Nested catch point for a runtime Error. */
-  struct ErrorCatchPoint
+  struct Continuation;
+  struct Frame;
+
+  /** Logical-frame state that must survive a nested runtime cleanup. */
+  struct FrameBoundary
   {
-    ErrorCatchPoint* parent;
-    std::jmp_buf continuation;
+    Frame* frame;
+    Continuation* continuation;
+  };
+
+  /** Nested runtime-Error recovery scope, separate from language raises. */
+  struct ErrorBoundary
+  {
+    ErrorBoundary* parent;
+    FrameBoundary frame_boundary;
+    std::jmp_buf recovery;
     ErrorInfo error{};
   };
 

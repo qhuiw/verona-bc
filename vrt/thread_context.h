@@ -11,10 +11,10 @@
 
 namespace vrt
 {
-  struct ErrorCatchPoint;
+  struct ErrorBoundary;
   struct Header;
 
-  /** Native control state associated with one active logical frame. */
+  /** Language-raise target associated with one active logical frame. */
   struct Continuation
   {
     Continuation* parent = nullptr;
@@ -28,7 +28,7 @@ namespace vrt
   {
     Thread thread{};
     Continuation* continuation = nullptr;
-    ErrorCatchPoint* error_catch_point = nullptr;
+    ErrorBoundary* error_boundary = nullptr;
 
     /** Return the context bound to the calling native thread. */
     static ThreadContext& get();
@@ -49,12 +49,16 @@ namespace vrt
     [[noreturn]] void
     raise(ValueType value_type, uint64_t value, Location target);
 
-    /** Raise a runtime Error to the innermost invocation catch point. */
+    /** Raise a runtime Error to the innermost error boundary. */
     [[noreturn]] void raise_error(Error error);
 
-    /** Invoke function under a nested runtime Error catch point. */
+    /** Invoke function under a nested runtime Error boundary. */
     [[nodiscard]] ErrorInfo
     try_invoke(InvocationFunction function, void* user_context);
+
+    /** Run cleanup while preserving any caller frame and contain its Error. */
+    [[nodiscard]] ErrorInfo
+    run_cleanup(InvocationFunction function, void* user_context);
 
     /** Destroy frames through, but not including, target. */
     void unwind_frames(Frame* target);

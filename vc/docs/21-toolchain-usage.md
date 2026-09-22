@@ -401,9 +401,18 @@ opaque payload structures for every class so recursive class fields can be
 resolved, then defines their native field layouts. Immutable class metadata
 records the class ID and name, payload size and alignment, ordered fields, and
 method table. Method entries are sorted by method ID and refer to the existing
-generated function metadata. Empty-class descriptors point at
-compiler-emitted singleton storage whose private immortal object header is
-constructed once by `vrt_program_init`.
+generated function metadata. A class with `final(self: T)` also stores a
+dedicated C-callable finalizer thunk while retaining `@final` in the ordinary
+method table. The thunk enters the finalizer's logical frame and calls its
+generated implementation with Verona's `tailcc` convention. Empty-class
+descriptors point at compiler-emitted singleton storage whose private immortal
+object header is constructed once by `vrt_program_init`.
+
+The thunk passes `self` as a borrowed pointer and does not retain or release
+it. The native backend does not yet encode Verona's transitive read-only
+capability in that pointer; reference-store lowering is also outside the
+current native subset. Finalizers that depend on native enforcement of
+read-only values remain unsupported until those representations are added.
 
 `libvrt` binds one logical `vrt_thread` to each participating native thread
 using thread-local storage. `vrt_thread_init` and `vrt_thread_deinit` perform
@@ -494,11 +503,18 @@ Empty classes use the immortal singleton storage initialized by
 without allocating. An empty class cannot be the entry point of a fresh
 region.
 
+A VIR `freeze` of an object or array calls `vrt_object_freeze` or
+`vrt_array_freeze` and then copies the source ownership into the destination.
+Primitive and raw-pointer values use the copy path directly. The runtime
+publishes immutable SCC representatives with atomic counts; repeated freezing
+is a no-op, while unsupported stack and arena roots raise `BadFreeze`.
+
 > **Status:** The LLVM backend currently supports scalar primitive types,
 > nominal class layouts and metadata,
 > multi-block conditional control flow, scalar operations, copy/move/drop,
 > static calls, process-local non-variadic FFI calls, returns,
-> scalar/raw-pointer `raise` payloads, and static tailcalls.
+> scalar/raw-pointer `raise` payloads, static tailcalls, object/array Freeze,
+> and generated object finalizers.
 > Object method lookup, dynamic calls, and dynamic tailcalls are supported
 > when lookup can determine one compatible callable signature; homogeneous
 > type aliases and unions are supported as receivers.

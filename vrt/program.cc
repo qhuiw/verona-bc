@@ -172,7 +172,7 @@ extern "C" VRT_EXPORT void vrt_invocation_begin(void)
   auto& context = vrt::ThreadContext::get();
   if (
     (context.thread.frame != nullptr) || (context.continuation != nullptr) ||
-    (context.error_catch_point != nullptr))
+    (context.error_boundary != nullptr))
     vrt::fail(vrt::Failure::invalid_thread_state);
 
   vrt::reset_exit_code();

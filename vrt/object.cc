@@ -3,12 +3,15 @@
 #include "error.h"
 #include "failure.h"
 #include "frame.h"
+#include "freeze.h"
 #include "program.h"
 #include "region.h"
+#include "thread_context.h"
 #include "value.h"
 #include "writebarrier.h"
 
 #include <algorithm>
+#include <cstdio>
 #include <cstring>
 #include <limits>
 #include <new>
@@ -85,6 +88,33 @@ namespace
 
 namespace vrt
 {
+  const Function* Class::method(uintptr_t method_id) const
+  {
+    uintptr_t first = 0;
+    uintptr_t last = method_count;
+
+    while (first < last)
+    {
+      const auto middle = first + ((last - first) / 2);
+      const auto& candidate = methods[middle];
+
+      if (candidate.id < method_id)
+        first = middle + 1;
+      else
+        last = middle;
+    }
+
+    if ((first == method_count) || (methods[first].id != method_id))
+      return nullptr;
+
+    return methods[first].func;
+  }
+
+  const Function* Class::finalizer() const
+  {
+    return method(final_method_id);
+  }
+
   Object::Object(
     Region* region, const Class* cls, std::byte* allocation, bool immortal)
   : Header(immortal ? Location::immortal() : Location(region), cls->id),
@@ -159,7 +189,7 @@ namespace vrt
     {
       const auto& field = cls->fields[index];
       writebarrier::init(
-        region, target + field.offset, field, source + field.offset);
+        location(), target + field.offset, field, source + field.offset);
     }
 
     return *this;
@@ -172,12 +202,29 @@ namespace vrt
 
     finalizing = true;
     auto* fields = static_cast<std::byte*>(this->fields());
+    const auto& cls = *this->cls;
 
-    for (uintptr_t index = 0; index < cls->field_count; index++)
+    if (cls.finalizer_thunk != nullptr)
     {
-      const auto& field = cls->fields[index];
+      auto error =
+        ThreadContext::get().run_cleanup(cls.finalizer_thunk, fields);
+      if (error.code != Error::none)
+      {
+        std::fprintf(
+          stderr,
+          "runtime error during finalizer%s%s: %s\n",
+          error.func == nullptr ? "" : " in ",
+          error.func == nullptr ? "" : error.func->name,
+          vrt_error_message(error.code));
+        std::fflush(stderr);
+      }
+    }
+
+    for (uintptr_t index = 0; index < cls.field_count; index++)
+    {
+      const auto& field = cls.fields[index];
       if (is_header_type(field.value_type))
-        writebarrier::drop(region(), field, fields + field.offset);
+        writebarrier::drop(location(), field, fields + field.offset);
     }
   }
 
@@ -268,25 +315,7 @@ vrt_object_lookup(const void* data_address, uintptr_t method_id)
 {
   const auto* object = static_cast<vrt::Object*>(
     vrt::Value{vrt::ValueType::object, data_address}.header());
-  const auto* cls = object->cls;
-  uintptr_t first = 0;
-  uintptr_t last = cls->method_count;
-
-  while (first < last)
-  {
-    const auto middle = first + ((last - first) / 2);
-    const auto& method = cls->methods[middle];
-
-    if (method.id < method_id)
-      first = middle + 1;
-    else
-      last = middle;
-  }
-
-  if ((first == cls->method_count) || (cls->methods[first].id != method_id))
-    return nullptr;
-
-  return cls->methods[first].func;
+  return object->cls->method(method_id);
 }
 
 extern "C" VRT_EXPORT void vrt_object_retain(void* data_address)
@@ -297,6 +326,13 @@ extern "C" VRT_EXPORT void vrt_object_retain(void* data_address)
 extern "C" VRT_EXPORT void vrt_object_release(void* data_address)
 {
   vrt::Value{vrt::ValueType::object, data_address}.reg_dec();
+}
+
+extern "C" VRT_EXPORT void vrt_object_freeze(void* data_address)
+{
+  auto* header = vrt::Value{vrt::ValueType::object, data_address}.header();
+  if (!vrt::freeze(header))
+    vrt::raise_error(vrt::Error::bad_freeze);
 }
 
 extern "C" VRT_EXPORT void vrt_object_escape(void* data_address)

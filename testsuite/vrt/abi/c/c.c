@@ -1,3 +1,8 @@
+// Coverage: C11 ABI sizes, enum values, type identities, descriptor layouts,
+// exported function signatures, and linkage for every public VRT header.
+// Non-goals: runtime semantics belong to the API, behavior, and internal
+// fixtures.
+
 #include <vrt/array.h>
 #include <vrt/error.h>
 #include <vrt/frame.h>
@@ -12,6 +17,16 @@ _Static_assert(sizeof(vrt_error) == sizeof(uint32_t), "error ABI");
 _Static_assert(VRT_ERROR_NONE == 0, "no error ABI");
 _Static_assert(VRT_ERROR_BAD_RAISE_TARGET == 1, "raise error ABI");
 _Static_assert(VRT_ERROR_BAD_ALLOC_TARGET == 2, "allocation error ABI");
+_Static_assert(VRT_ERROR_BAD_ARRAY_INDEX == 3, "array index error ABI");
+_Static_assert(VRT_ERROR_BAD_STORE_TARGET == 4, "store target error ABI");
+_Static_assert(VRT_ERROR_BAD_STORE == 5, "store error ABI");
+_Static_assert(VRT_ERROR_METHOD_NOT_FOUND == 6, "method error ABI");
+_Static_assert(VRT_ERROR_BAD_STACK_ESCAPE == 7, "stack escape error ABI");
+_Static_assert(VRT_ERROR_BAD_REGION_ENTRY_POINT == 8, "region entry error ABI");
+_Static_assert(VRT_ERROR_BAD_FREEZE == 9, "freeze error ABI");
+_Static_assert(VRT_ERROR_BAD_MERGE == 10, "merge error ABI");
+_Static_assert(
+  VRT_ERROR_SCHEDULER_ALREADY_RUNNING == 11, "scheduler error ABI");
 _Static_assert(VRT_REGION_RC == 0, "RC region ABI");
 _Static_assert(VRT_REGION_ARENA == 1, "arena region ABI");
 _Static_assert(VRT_VALUE_TYPE_NONE == 0, "none value type ABI");
@@ -75,6 +90,9 @@ _Static_assert(
   "class methods ABI");
 _Static_assert(
   VRT_TYPE_IS(((vrt_class*)0)->singleton, void*), "class singleton ABI");
+_Static_assert(
+  VRT_TYPE_IS(((vrt_class*)0)->finalizer_thunk, vrt_finalizer_thunk),
+  "class finalizer thunk ABI");
 _Static_assert(VRT_TYPE_IS(((vrt_type*)0)->id, uintptr_t), "type id ABI");
 _Static_assert(
   VRT_TYPE_IS(((vrt_type*)0)->value_type, uintptr_t), "type value type ABI");
@@ -147,6 +165,7 @@ static void* (*const array_region_signature)(
   vrt_region_type, uintptr_t, uintptr_t) = vrt_array_region;
 static void (*const array_retain_signature)(void*) = vrt_array_retain;
 static void (*const array_release_signature)(void*) = vrt_array_release;
+static void (*const array_freeze_signature)(void*) = vrt_array_freeze;
 static void (*const array_escape_signature)(void*) = vrt_array_escape;
 static void (*const array_copy_signature)(
   void*, uintptr_t, void*, uintptr_t, uintptr_t) = vrt_array_copy;
@@ -169,6 +188,7 @@ static const vrt_func* (*const object_lookup_signature)(
   const void*, uintptr_t) = vrt_object_lookup;
 static void (*const object_retain_signature)(void*) = vrt_object_retain;
 static void (*const object_release_signature)(void*) = vrt_object_release;
+static void (*const object_freeze_signature)(void*) = vrt_object_freeze;
 static void (*const object_escape_signature)(void*) = vrt_object_escape;
 
 void verona_program_entry(void)
@@ -202,6 +222,7 @@ void verona_program_entry(void)
   (void)array_region_signature;
   (void)array_retain_signature;
   (void)array_release_signature;
+  (void)array_freeze_signature;
   (void)array_escape_signature;
   (void)array_copy_signature;
   (void)array_fill_signature;
@@ -213,6 +234,7 @@ void verona_program_entry(void)
   (void)object_lookup_signature;
   (void)object_retain_signature;
   (void)object_release_signature;
+  (void)object_freeze_signature;
   (void)object_escape_signature;
   (void)object_value_type;
   (void)bad_array_index;

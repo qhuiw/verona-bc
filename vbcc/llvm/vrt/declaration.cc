@@ -68,6 +68,8 @@ namespace vbcc
         declare("vrt_array_retain", void_type, {pointer_type});
       runtime.array_release =
         declare("vrt_array_release", void_type, {pointer_type});
+      runtime.array_freeze =
+        declare("vrt_array_freeze", void_type, {pointer_type});
       runtime.array_escape =
         declare("vrt_array_escape", void_type, {pointer_type});
       runtime.array_copy = declare(
@@ -102,6 +104,8 @@ namespace vbcc
         declare("vrt_object_retain", void_type, {pointer_type});
       runtime.object_release =
         declare("vrt_object_release", void_type, {pointer_type});
+      runtime.object_freeze =
+        declare("vrt_object_freeze", void_type, {pointer_type});
       runtime.object_escape =
         declare("vrt_object_escape", void_type, {pointer_type});
       runtime.func_entry =

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../include/vrt/region.h"
+#include "rc.h"
 
 #include <cstddef>
 #include <cstdint>
@@ -18,7 +19,7 @@ namespace vrt
   {
     Region* parent = nullptr;
     Header* entry_point = nullptr;
-    uintptr_t stack_reference_count = 0;
+    RC stack_reference_count = 0;
     uintptr_t frame_depth = 0;
     RegionType type;
     bool destroying = false;
@@ -42,6 +43,13 @@ namespace vrt
     virtual bool begin_finalizing() = 0;
     virtual void finalize_contents() = 0;
     virtual void release_dead_objects() = 0;
+
+    template<typename F>
+    void trace_fn(F&& function) const;
+
+    /** The callback must not mutate this region's tracked-header set. */
+    template<typename F>
+    void for_each_header(F&& function) const;
 
     bool is_frame_local() const;
     virtual bool is_arena() const;

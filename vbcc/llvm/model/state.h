@@ -59,6 +59,7 @@ namespace vbcc
       llvm::Function* array_region = nullptr;
       llvm::Function* array_retain = nullptr;
       llvm::Function* array_release = nullptr;
+      llvm::Function* array_freeze = nullptr;
       llvm::Function* array_escape = nullptr;
       llvm::Function* array_copy = nullptr;
       llvm::Function* array_fill = nullptr;
@@ -69,6 +70,7 @@ namespace vbcc
       llvm::Function* object_class_id = nullptr;
       llvm::Function* object_retain = nullptr;
       llvm::Function* object_release = nullptr;
+      llvm::Function* object_freeze = nullptr;
       llvm::Function* object_escape = nullptr;
       llvm::Function* object_lookup = nullptr;
       llvm::Function* func_entry = nullptr;

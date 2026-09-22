@@ -3,6 +3,7 @@
 #include "codegen.h"
 
 #include <algorithm>
+#include <llvm/IR/BasicBlock.h>
 #include <llvm/IR/Constants.h>
 #include <llvm/IR/DataLayout.h>
 #include <llvm/IR/DerivedTypes.h>
@@ -106,6 +107,7 @@ namespace vbcc
          pointer_type,
          word_type,
          pointer_type,
+         pointer_type,
          pointer_type});
       auto* null_pointer = llvm::ConstantPointerNull::get(pointer_type);
 
@@ -129,6 +131,7 @@ namespace vbcc
         auto& lowered_class = lowered->second;
         auto fields = definition / Fields;
         auto methods = definition / Methods;
+        llvm::Constant* finalizer_thunk = null_pointer;
         auto* fields_layout =
           module.getDataLayout().getStructLayout(lowered_class.fields_type);
         std::vector<llvm::Constant*> field_metadata;
@@ -251,6 +254,40 @@ namespace vbcc
             llvm::ConstantStruct::get(
               method_metadata_type,
               {word(method_id->second), function->second.descriptor}));
+
+          if (method_id->second == FinalMethodId)
+          {
+            auto& finalizer = function->second;
+            if (
+              (runtime.frame_enter == nullptr) ||
+              (finalizer.signature.param_types.size() != 1) ||
+              (finalizer.signature.param_types.front().runtime_type !=
+               vrt::ValueType::object) ||
+              (finalizer.signature.param_types.front().llvm_type !=
+               pointer_type))
+            {
+              fail(method, "invalid LLVM finalizer signature");
+              return false;
+            }
+
+            auto* thunk_type = llvm::FunctionType::get(
+              llvm::Type::getVoidTy(context), {pointer_type}, false);
+            auto* thunk = llvm::Function::Create(
+              thunk_type,
+              llvm::GlobalValue::InternalLinkage,
+              "verona.class." + std::to_string(index) + ".finalizer",
+              module);
+            thunk->setCallingConv(llvm::CallingConv::C);
+            auto* entry = llvm::BasicBlock::Create(context, "entry", thunk);
+            llvm::IRBuilder<> thunk_builder(entry);
+            thunk_builder.CreateCall(
+              runtime.frame_enter, {finalizer.descriptor});
+            auto* call =
+              thunk_builder.CreateCall(finalizer.function, {thunk->getArg(0)});
+            call->setCallingConv(llvm::CallingConv::Tail);
+            thunk_builder.CreateRetVoid();
+            finalizer_thunk = thunk;
+          }
         }
 
         std::sort(
@@ -344,7 +381,8 @@ namespace vbcc
            fields_pointer,
            word(methods->size()),
            methods_pointer,
-           singleton_pointer});
+           singleton_pointer,
+           finalizer_thunk});
         lowered_class.cls = new llvm::GlobalVariable(
           module,
           class_metadata_type,

@@ -1,3 +1,9 @@
+// Coverage: successful and nested protected invocation, direct runtime-error
+// propagation, operation-induced errors, frame unwind metadata, boundary
+// restoration, and continued use after recovery.
+// Native VRT coverage: exported error APIs and ErrorBoundary unwinding.
+// Non-goals: cleanup errors from finalizers have a dedicated fixture.
+
 #include "object.h"
 #include "vrt.h"
 
@@ -13,6 +19,19 @@
 namespace
 {
   constexpr uintptr_t singleton_class_id = 0x401;
+  constexpr uintptr_t value_class_id = 0x402;
+  constexpr uintptr_t holder_class_id = 0x403;
+
+  struct ValueFields
+  {
+    uint64_t value;
+  };
+
+  struct HolderFields
+  {
+    void* first;
+    void* second;
+  };
 
   const vrt::Function root_function{1, "root", nullptr};
   const vrt::Function child_function{2, "child", nullptr};
@@ -31,10 +50,50 @@ namespace
     nullptr,
     singleton_storage + vrt::Object::singleton_data_offset()};
 
+  const vrt::Field value_fields[] = {
+    {offsetof(ValueFields, value),
+     sizeof(ValueFields::value),
+     0,
+     vrt::ValueType::scalar}};
+
+  const vrt::Class value_class{
+    value_class_id,
+    "Value",
+    sizeof(ValueFields),
+    alignof(ValueFields),
+    1,
+    value_fields,
+    0,
+    nullptr,
+    nullptr};
+
+  const vrt::Field holder_fields[] = {
+    {offsetof(HolderFields, first),
+     sizeof(HolderFields::first),
+     value_class_id,
+     vrt::ValueType::object},
+    {offsetof(HolderFields, second),
+     sizeof(HolderFields::second),
+     value_class_id,
+     vrt::ValueType::object}};
+
+  const vrt::Class holder_class{
+    holder_class_id,
+    "Holder",
+    sizeof(HolderFields),
+    alignof(HolderFields),
+    2,
+    holder_fields,
+    0,
+    nullptr,
+    nullptr};
+
   const vrt::TypeInfo types[] = {
-    {singleton_class_id, vrt::ValueType::object, sizeof(void*), 0}};
+    {singleton_class_id, vrt::ValueType::object, sizeof(void*), 0},
+    {value_class_id, vrt::ValueType::object, sizeof(void*), 0},
+    {holder_class_id, vrt::ValueType::object, sizeof(void*), 0}};
   const vrt::Singleton singletons[] = {{singleton_storage, &singleton_class}};
-  const vrt::Program program{1, types, 1, singletons};
+  const vrt::Program program{3, types, 1, singletons};
 
   void complete_normally(void* context)
   {
@@ -74,6 +133,19 @@ namespace
   {
     (void)vrt_object_heap(
       singleton_class.singleton, &singleton_class, 0, nullptr);
+  }
+
+  void escape_graph_with_two_region_entries(void*)
+  {
+    vrt_frame_enter(&root_function);
+    ValueFields first_args{1};
+    auto* first =
+      vrt_object_region(vrt::RegionType::rc, &value_class, 1, &first_args);
+    ValueFields second_args{2};
+    auto* second = vrt_object_heap(first, &value_class, 1, &second_args);
+    HolderFields holder_args{first, second};
+    auto* holder = vrt_object_new(&holder_class, 2, &holder_args);
+    vrt_object_escape(holder);
   }
 }
 
@@ -124,6 +196,13 @@ int main()
     return 11;
   if (error.code != VRT_ERROR_BAD_ALLOC_TARGET)
     return 12;
+
+  if (vrt_try_invoke(escape_graph_with_two_region_entries, nullptr, &error))
+    return 15;
+  if (
+    (error.code != VRT_ERROR_BAD_STACK_ESCAPE) ||
+    (vrt_thread_current_frame() != nullptr))
+    return 16;
 
   if (!vrt_try_invoke(complete_normally, &calls, &error))
     return 13;

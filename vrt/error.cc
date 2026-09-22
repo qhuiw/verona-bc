@@ -32,7 +32,7 @@ namespace
       case vrt::Error::bad_region_entry_point:
         return "bad region entry point";
       case vrt::Error::bad_freeze:
-        return "cannot freeze a readonly value";
+        return "cannot freeze stack or arena value";
       case vrt::Error::bad_merge:
         return "cannot merge regions: both have owners";
       case vrt::Error::scheduler_already_running:
@@ -48,15 +48,18 @@ namespace vrt
   [[noreturn]] void ThreadContext::raise_error(Error error)
   {
     internal_check(
-      (error != Error::none) && (error_catch_point != nullptr) &&
-        (error_catch_point->error.code == Error::none),
+      (error != Error::none) && (error_boundary != nullptr) &&
+        (error_boundary->error.code == Error::none),
       Failure::invalid_error_state);
 
-    auto* catch_point = error_catch_point;
-    catch_point->error = {
+    auto* boundary = error_boundary;
+    boundary->error = {
       error, thread.frame == nullptr ? nullptr : thread.frame->func, 0};
-    unwind_frames(nullptr);
-    std::longjmp(catch_point->continuation, 1);
+    unwind_frames(boundary->frame_boundary.frame);
+    internal_check(
+      continuation == boundary->frame_boundary.continuation,
+      Failure::invalid_error_state);
+    std::longjmp(boundary->recovery, 1);
   }
 
   ErrorInfo
@@ -67,14 +70,14 @@ namespace vrt
         (continuation == nullptr),
       Failure::invalid_error_state);
 
-    auto* catch_point =
-      new (std::nothrow) ErrorCatchPoint{error_catch_point, {}, {}};
-    if (catch_point == nullptr)
+    auto* boundary = new (std::nothrow)
+      ErrorBoundary{error_boundary, {nullptr, nullptr}, {}, {}};
+    if (boundary == nullptr)
       fail(Failure::out_of_memory);
 
-    error_catch_point = catch_point;
+    error_boundary = boundary;
 
-    if (setjmp(catch_point->continuation) == 0)
+    if (setjmp(boundary->recovery) == 0)
     {
       function(user_context);
       internal_check(
@@ -82,23 +85,67 @@ namespace vrt
         Failure::invalid_frame_state);
 
       internal_check(
-        (error_catch_point == catch_point) &&
-          (catch_point->error.code == Error::none),
+        (error_boundary == boundary) && (boundary->error.code == Error::none),
         Failure::invalid_error_state);
 
-      error_catch_point = catch_point->parent;
-      delete catch_point;
+      error_boundary = boundary->parent;
+      delete boundary;
       return {};
     }
 
     internal_check(
-      (error_catch_point == catch_point) &&
-        (catch_point->error.code != Error::none),
+      (error_boundary == boundary) && (boundary->error.code != Error::none),
       Failure::invalid_error_state);
 
-    auto error = catch_point->error;
-    error_catch_point = catch_point->parent;
-    delete catch_point;
+    auto error = boundary->error;
+    error_boundary = boundary->parent;
+    delete boundary;
+    return error;
+  }
+
+  ErrorInfo
+  ThreadContext::run_cleanup(InvocationFunction function, void* user_context)
+  {
+    internal_check(function != nullptr, Failure::invalid_error_state);
+    const FrameBoundary frame_boundary{thread.frame, continuation};
+    internal_check(
+      (frame_boundary.frame == nullptr) ?
+        (frame_boundary.continuation == nullptr) :
+        ((frame_boundary.continuation != nullptr) &&
+         (frame_boundary.continuation->frame == frame_boundary.frame)),
+      Failure::invalid_frame_state);
+
+    auto* boundary =
+      new (std::nothrow) ErrorBoundary{error_boundary, frame_boundary, {}, {}};
+    if (boundary == nullptr)
+      fail(Failure::out_of_memory);
+
+    error_boundary = boundary;
+    if (setjmp(boundary->recovery) == 0)
+    {
+      function(user_context);
+      internal_check(
+        (thread.frame == boundary->frame_boundary.frame) &&
+          (continuation == boundary->frame_boundary.continuation),
+        Failure::invalid_frame_state);
+      internal_check(
+        (error_boundary == boundary) && (boundary->error.code == Error::none),
+        Failure::invalid_error_state);
+
+      error_boundary = boundary->parent;
+      delete boundary;
+      return {};
+    }
+
+    internal_check(
+      (thread.frame == boundary->frame_boundary.frame) &&
+        (continuation == boundary->frame_boundary.continuation) &&
+        (error_boundary == boundary) && (boundary->error.code != Error::none),
+      Failure::invalid_error_state);
+
+    auto error = boundary->error;
+    error_boundary = boundary->parent;
+    delete boundary;
     return error;
   }
 
