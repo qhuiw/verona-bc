@@ -204,7 +204,7 @@ namespace vbcc
         return false;
       }
 
-      if (runtime.object_lookup_method == nullptr)
+      if (runtime.object_lookup == nullptr)
       {
         fail(statement, "LLVM dynamic lookup runtime is unavailable");
         return false;
@@ -269,7 +269,7 @@ namespace vbcc
 
         builder.SetInsertPoint(fallback);
         auto* fallback_callable = builder.CreateCall(
-          runtime.object_lookup_method,
+          runtime.object_lookup,
           {receiver->value, method_value},
           name + ".fallback");
         builder.CreateBr(merge);
@@ -285,7 +285,7 @@ namespace vbcc
       else
       {
         callable = builder.CreateCall(
-          runtime.object_lookup_method,
+          runtime.object_lookup,
           {receiver->value, method_value},
           strip_sigil(node_text(dst)));
       }

@@ -70,7 +70,7 @@ namespace vbcc
       llvm::Function* object_retain = nullptr;
       llvm::Function* object_release = nullptr;
       llvm::Function* object_escape = nullptr;
-      llvm::Function* object_lookup_method = nullptr;
+      llvm::Function* object_lookup = nullptr;
       llvm::Function* func_entry = nullptr;
       llvm::Function* setjmp = nullptr;
     };

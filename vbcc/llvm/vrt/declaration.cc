@@ -96,7 +96,7 @@ namespace vbcc
         {i8_type, pointer_type, word_type, pointer_type});
       runtime.object_class_id =
         declare("vrt_object_class_id", word_type, {pointer_type});
-      runtime.object_lookup_method =
+      runtime.object_lookup =
         declare("vrt_object_lookup", pointer_type, {pointer_type, word_type});
       runtime.object_retain =
         declare("vrt_object_retain", void_type, {pointer_type});
