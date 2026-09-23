@@ -1,7 +1,8 @@
-// Coverage: immutable incoming copy/drop ARC accounting, rejection of writes
-// to immutable or immortal storage, and conflicting region-parent stores.
-// Non-goals: mutable region drag and parenting are covered by the region and
-// array fixtures; SCC reclamation is covered by the SCC fixture.
+// Coverage: immutable copy/drop ARC accounting, immutable children during
+// graph drag, child-parent reuse during overwrite, rejection of writes to
+// immutable or immortal storage, and conflicting region-parent stores.
+// Non-goals: return/raise dragging is covered by the frame and array fixtures;
+// SCC reclamation is covered by the SCC fixture.
 
 #include "writebarrier.h"
 
@@ -93,6 +94,81 @@ int main()
     holder->location(), node_fields[0], &holder_fields->next);
   if ((holder_fields->next != nullptr) || (immutable->get_arc() != 1))
     return 4;
+
+  // Immutable children are terminal during mutable graph relocation.
+  auto* immutable_destination_region =
+    vrt::Region::create(vrt::RegionType::rc);
+  auto* immutable_destination =
+    immutable_destination_region->object(&node_class);
+  auto* immutable_source = frame_region->object(&node_class);
+  auto* immutable_source_fields =
+    static_cast<NodeFields*>(immutable_source->fields());
+  vrt::writebarrier::copy(
+    immutable_source->location(),
+    &immutable_source_fields->next,
+    node_fields[0],
+    &immutable_data);
+
+  auto* immutable_source_data = immutable_source->data();
+  auto* immutable_destination_fields =
+    static_cast<NodeFields*>(immutable_destination->fields());
+  vrt::writebarrier::copy(
+    immutable_destination->location(),
+    &immutable_destination_fields->next,
+    node_fields[0],
+    &immutable_source_data);
+  if (
+    (immutable_source->region() != immutable_destination_region) ||
+    (immutable_destination_fields->next != immutable_source_data) ||
+    (immutable->get_arc() != 2) ||
+    (immutable_destination_region->stack_reference_count != 2))
+    return 20;
+
+  immutable_source->reg_dec();
+  immutable_destination->reg_dec();
+  if (immutable->get_arc() != 1)
+    return 21;
+
+  // Replacing the parent edge to a child region with a dragged graph that
+  // still reaches that child must preserve the parent relationship.
+  auto* reused_child_region = vrt::Region::create(vrt::RegionType::rc);
+  auto* reused_child = reused_child_region->object(&node_class);
+  auto* reuse_destination_region = vrt::Region::create(vrt::RegionType::rc);
+  auto* reuse_destination = reuse_destination_region->object(&node_class);
+  auto* reuse_destination_fields =
+    static_cast<NodeFields*>(reuse_destination->fields());
+  auto* reused_child_data = reused_child->data();
+  vrt::writebarrier::init(
+    reuse_destination->location(),
+    &reuse_destination_fields->next,
+    node_fields[0],
+    &reused_child_data);
+
+  auto* reuse_source = frame_region->object(&node_class);
+  auto* reuse_source_fields = static_cast<NodeFields*>(reuse_source->fields());
+  vrt::writebarrier::copy(
+    reuse_source->location(),
+    &reuse_source_fields->next,
+    node_fields[0],
+    &reused_child_data);
+
+  auto* reuse_source_data = reuse_source->data();
+  vrt::writebarrier::copy(
+    reuse_destination->location(),
+    &reuse_destination_fields->next,
+    node_fields[0],
+    &reuse_source_data);
+  if (
+    (reuse_source->region() != reuse_destination_region) ||
+    (reuse_destination_fields->next != reuse_source_data) ||
+    (reused_child_region->parent != reuse_destination_region) ||
+    (reused_child_region->stack_reference_count != 0) ||
+    (reused_child->reference_count != 1) ||
+    (reuse_destination_region->stack_reference_count != 2))
+    return 22;
+
+  reuse_source->reg_dec();
+  reuse_destination->reg_dec();
 
   holder->reg_dec();
   vrt_frame_leave();

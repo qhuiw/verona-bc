@@ -1,6 +1,7 @@
 add_library(libvrt STATIC
   array.cc
   collect.cc
+  drag.cc
   error.cc
   exit_code.cc
   failure.cc

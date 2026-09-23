@@ -1,20 +1,16 @@
 #include "writebarrier.h"
 
-#include "array.h"
+#include "drag.h"
 #include "error.h"
 #include "failure.h"
 #include "frame.h"
 #include "header.h"
 #include "object.h"
 #include "region.h"
-#include "region_ext.h"
 #include "thread_context.h"
 #include "value.h"
 
 #include <cstring>
-#include <limits>
-#include <unordered_map>
-#include <vector>
 
 namespace
 {
@@ -72,6 +68,26 @@ namespace
       (location.is_region() && location.to_region()->is_frame_local());
   }
 
+  vrt::Region*
+  replaced_child_region(vrt::Location store_location, vrt::Header* outgoing)
+  {
+    if ((outgoing == nullptr) || !store_location.is_region())
+      return nullptr;
+
+    const auto outgoing_location = outgoing->location();
+    if (!outgoing_location.is_region())
+      return nullptr;
+
+    auto* destination = store_location.to_region();
+    auto* outgoing_region = outgoing_location.to_region();
+    if (
+      (outgoing_region != destination) && outgoing_region->has_parent() &&
+      (outgoing_region->parent == destination))
+      return outgoing_region;
+
+    return nullptr;
+  }
+
   void
   validate_store(vrt::Location location, const void* target, const void* source)
   {
@@ -93,7 +109,10 @@ namespace
     }
   }
 
-  void drop_header(vrt::Location store_location, vrt::Header* outgoing)
+  void drop_header(
+    vrt::Location store_location,
+    vrt::Header* outgoing,
+    bool preserve_parent = false)
   {
     if (outgoing == nullptr)
       return;
@@ -125,6 +144,16 @@ namespace
 
     if (store_location == outgoing_location)
     {
+      outgoing->field_dec();
+      return;
+    }
+
+    if (preserve_parent)
+    {
+      internal_check(
+        store_location.is_region() && outgoing_region->has_parent() &&
+          (outgoing_region->parent == store_location.to_region()),
+        vrt::Failure::invalid_write);
       outgoing->field_dec();
       return;
     }
@@ -184,7 +213,7 @@ namespace vrt::writebarrier
           ((destination != incoming_region) &&
            (destination->frame_depth < incoming_region->frame_depth))));
 
-      if (must_drag && !drag(destination, incoming))
+      if (must_drag && !drag_allocation(destination, incoming))
         raise_error(Error::bad_store);
 
       store_header(target, incoming);
@@ -281,12 +310,24 @@ namespace vrt::writebarrier
           ((destination != incoming_region) &&
            (destination->frame_depth < incoming_region->frame_depth))));
 
-      if (must_drag && !drag(destination, incoming, false))
-        raise_error(Error::bad_store);
+      bool preserve_outgoing_parent = false;
+      if (must_drag)
+      {
+        auto result = drag_allocation(
+          destination,
+          incoming,
+          DragOptions{
+            RootReference::retained,
+            replaced_child_region(store_location, outgoing)});
+        if (!result)
+          raise_error(Error::bad_store);
+
+        preserve_outgoing_parent = result->replaced_child_reused;
+      }
 
       incoming->field_inc();
       store_header(target, incoming);
-      drop_header(store_location, outgoing);
+      drop_header(store_location, outgoing, preserve_outgoing_parent);
       return;
     }
 
@@ -328,143 +369,5 @@ namespace vrt::writebarrier
     auto* outgoing = load_header(field.value_type, source);
     clear_header(source);
     drop_header(store_location, outgoing);
-  }
-
-  bool drag(Region* destination, Header* root, bool root_reference_is_move)
-  {
-    if (
-      (destination == nullptr) || destination->destroying ||
-      destination->is_finalizing() || (root == nullptr) ||
-      root->location().is_immortal() || root->finalizing ||
-      (root->region() == nullptr) || !root->region()->is_frame_local())
-      return false;
-
-    if (root->region() == destination)
-      return true;
-
-    std::vector<Header*> worklist;
-    std::unordered_map<Header*, uintptr_t> internal_references;
-    std::unordered_map<Region*, Header*> child_regions;
-    uintptr_t destination_stack_decrements = 0;
-    worklist.push_back(root);
-
-    while (!worklist.empty())
-    {
-      auto* header = worklist.back();
-      worklist.pop_back();
-
-      auto existing = internal_references.find(header);
-      if (existing != internal_references.end())
-      {
-        if (existing->second == std::numeric_limits<uintptr_t>::max())
-          return false;
-
-        existing->second++;
-        continue;
-      }
-
-      if (header->location().is_immortal())
-        continue;
-
-      auto* source_region = header->region();
-      if (
-        (source_region == nullptr) || source_region->destroying ||
-        header->finalizing)
-        return false;
-
-      if (source_region == destination)
-      {
-        if (!destination->is_frame_local())
-        {
-          if (
-            destination_stack_decrements ==
-            std::numeric_limits<uintptr_t>::max())
-            return false;
-
-          destination_stack_decrements++;
-        }
-
-        continue;
-      }
-
-      if (
-        destination->is_frame_local() && source_region->is_frame_local() &&
-        (destination->frame_depth >= source_region->frame_depth))
-        continue;
-
-      if (!source_region->is_frame_local())
-      {
-        if (destination->is_frame_local())
-          continue;
-
-        if (
-          source_region->has_parent() && (source_region->parent == destination))
-          continue;
-
-        if (
-          source_region->has_parent() ||
-          source_region->is_ancestor_of(destination) ||
-          !child_regions.emplace(source_region, header).second)
-          return false;
-
-        continue;
-      }
-
-      internal_references.emplace(header, 1);
-      header->trace_fn([&](Header* child) { worklist.push_back(child); });
-    }
-
-    if (!root_reference_is_move)
-    {
-      auto root_references = internal_references.find(root);
-      if (
-        (root_references == internal_references.end()) ||
-        (root_references->second == 0))
-        return false;
-
-      root_references->second--;
-    }
-
-    for (const auto& [header, internal_count] : internal_references)
-    {
-      if (
-        (header->reference_count < internal_count) ||
-        (header->region() == nullptr) || !header->region()->contains(header))
-        return false;
-    }
-
-    destination->stack_inc();
-
-    for (const auto& [region, entry] : child_regions)
-    {
-      region->set_parent(destination, entry);
-      const bool child_region_alive = region->stack_dec();
-      internal_check(child_region_alive, Failure::invalid_write);
-    }
-
-    for (const auto& [header, internal_count] : internal_references)
-    {
-      auto* source_region = header->region();
-      const auto external_count = header->reference_count - internal_count;
-      destination->stack_inc(external_count);
-
-      const bool removed = source_region->remove(header);
-      internal_check(removed, Failure::invalid_write);
-
-      header->set_location(Location(destination));
-      destination->insert(header);
-    }
-
-    if (destination_stack_decrements != 0)
-    {
-      const bool destination_alive =
-        destination->stack_dec(destination_stack_decrements);
-      internal_check(destination_alive, Failure::invalid_write);
-    }
-
-    const bool destination_alive = destination->stack_dec();
-    internal_check(destination_alive, Failure::invalid_write);
-
-    return true;
   }
 }

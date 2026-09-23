@@ -1,11 +1,11 @@
 #include "thread_context.h"
 
+#include "drag.h"
 #include "failure.h"
 #include "frame.h"
 #include "header.h"
 #include "region.h"
 #include "value.h"
-#include "writebarrier.h"
 
 #include <optional>
 
@@ -72,14 +72,20 @@ namespace vrt
 
     if (frame->parent != nullptr)
     {
-      if (!writebarrier::drag(frame_region(frame->parent), header, false))
+      if (!drag_allocation(
+        frame_region(frame->parent),
+        header,
+        {.root_reference = RootReference::retained}))
         raise_error(Error::bad_stack_escape);
 
       return;
     }
 
     auto* destination = Region::create(RegionType::rc);
-    if (!writebarrier::drag(destination, header, false))
+        if (!drag_allocation(
+          destination,
+          header,
+          {.root_reference = RootReference::retained}))
     {
       destroy_region(destination);
       raise_error(Error::bad_stack_escape);
@@ -115,7 +121,10 @@ namespace vrt
         if (
           (source != destination) &&
           (source->frame_depth > destination->frame_depth) &&
-          !writebarrier::drag(destination, header, false))
+          !drag_allocation(
+            destination,
+            header,
+            {.root_reference = RootReference::retained}))
           raise_error(Error::bad_stack_escape);
       }
     }

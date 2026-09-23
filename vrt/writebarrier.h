@@ -6,9 +6,7 @@
 
 namespace vrt
 {
-  struct Header;
   struct Object;
-  struct Region;
 }
 
 namespace vrt::writebarrier
@@ -29,8 +27,4 @@ namespace vrt::writebarrier
 
   /** Drop a field while finalizing its containing object. */
   void drop(Location store_location, const Field& field, void* source);
-
-  /** Drag a frame-local object/array graph to an older or non-frame region. */
-  bool
-  drag(Region* destination, Header* root, bool root_reference_is_move = true);
 }
