@@ -1,6 +1,10 @@
 cmake_minimum_required(VERSION 3.28)
 project(vbc VERSION 1.0.0 LANGUAGES C CXX)
 
+if(NOT CMAKE_CONFIGURATION_TYPES AND NOT CMAKE_BUILD_TYPE)
+  set(CMAKE_BUILD_TYPE Debug CACHE STRING "Build type" FORCE)
+endif()
+
 include(FetchContent)
 include(GNUInstallDirs)
 find_package(Threads REQUIRED)
