@@ -191,8 +191,8 @@ namespace vrt
             continue;
           }
 
-          internal_check(
-            object_region->remove(header), Failure::invalid_region_state);
+          const bool removed = object_region->remove(header);
+          internal_check(removed, Failure::invalid_region_state);
           header->set_location(Location::from_raw(Location::Pending));
           frozen_set.emplace(header);
 
@@ -305,8 +305,8 @@ namespace vrt
         {
           if (representative_location.to_region() == region)
           {
-            internal_check(
-              region->remove(header), Failure::invalid_region_state);
+            const bool removed = region->remove(header);
+            internal_check(removed, Failure::invalid_region_state);
             header->set_location(Location::from_raw(Location::Pending));
             frozen_set.emplace(header);
 
