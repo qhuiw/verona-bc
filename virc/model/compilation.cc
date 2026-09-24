@@ -175,13 +175,13 @@ namespace virc
     auto func_main = FuncState(nullptr);
     func_main.name = main_name;
     functions.push_back(func_main);
-    func_ids.insert({main_name, MainFunctionIndex});
+    func_ids.insert({main_name, MainFunctionId});
 
     // Reserve a method ID for `@final`.
-    method_ids.insert({ST::di().string("@final"), FinalizerMethodIndex});
+    method_ids.insert({ST::di().string("@final"), FinalizerMethodId});
 
     // Reserve a method ID for `@callback`.
-    method_ids.insert({ST::di().string("@callback"), CallbackMethodIndex});
+    method_ids.insert({ST::di().string("@callback"), CallbackMethodId});
   }
 
   void Compilation::add_path(const std::filesystem::path& path)

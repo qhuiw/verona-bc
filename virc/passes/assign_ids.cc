@@ -170,7 +170,7 @@ namespace virc
             return err(func_id, "function has no labels");
           }
 
-          if (*state->get_func_id(func_id) == MainFunctionIndex)
+          if (*state->get_func_id(func_id) == MainFunctionId)
           {
             if (func_state.params != 0)
             {
@@ -222,7 +222,7 @@ namespace virc
 
     p.post([state](auto top) {
       state->top = top;
-      if (!state->functions.at(MainFunctionIndex).func)
+      if (!state->functions.at(MainFunctionId).func)
       {
         state->error = true;
         top << err(Func, "missing main function");

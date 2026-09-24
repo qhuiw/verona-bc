@@ -255,7 +255,7 @@ namespace vbcc
               method_metadata_type,
               {word(method_id->second), function->second.descriptor}));
 
-          if (method_id->second == FinalMethodId)
+          if (method_id->second == virc::FinalizerMethodId)
           {
             auto& finalizer = function->second;
             if (
