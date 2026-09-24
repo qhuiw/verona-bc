@@ -35,9 +35,9 @@ if(VERONA_ENABLE_LLVM_BACKEND)
 endif()
 
 add_executable(vbcc
-  passes/labels.cc
-  passes/parser.cc
-  passes/statements.cc
+  reader/labels.cc
+  reader/parser.cc
+  reader/statements.cc
   main.cc
 )
 

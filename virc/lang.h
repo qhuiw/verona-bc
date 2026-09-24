@@ -7,9 +7,6 @@
 
 namespace virc
 {
-  Parse parser();
-  PassDef statements();
-  PassDef labels();
   PassDef memo();
   PassDef assign_ids(std::shared_ptr<Bytecode> state);
   PassDef validate_ids(std::shared_ptr<Bytecode> state);

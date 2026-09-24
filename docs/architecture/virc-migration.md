@@ -34,6 +34,10 @@ backend work that is not part of the shared VIRC/VBC migration.
 | `virc/lang.{h,cc}` literals | `virc/support/literals.{h,cc}` | Literal conversion, escaping, and parser helpers |
 | `virc/from_chars.h` | `virc/support/literals.h` | Portable literal number parsing |
 | `virc/lang.h` statement patterns | `virc/passes/patterns.h` | Shared patterns consumed by compiler passes |
+| `virc/passes/parser.cc` | `virc/reader/parser.cc` | Textual VIR tokenization and parsing |
+| `virc/passes/statements.cc` | `virc/reader/statements.cc` | Textual statement construction |
+| `virc/passes/labels.cc` | `virc/reader/labels.cc` | Textual body-to-label grouping |
+| `virc/lang.h` reader declarations | `virc/reader/reader.h` | Textual reader API |
 | `vbcc/llvm/**` | `vbcc/llvm/**` | Legacy optional backend pending its separate migration |
 
 The extraction phases extend this table with symbol-level destinations. Line

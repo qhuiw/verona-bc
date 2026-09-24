@@ -1,5 +1,6 @@
 #include "bytecode.h"
 #include "lang.h"
+#include "reader/reader.h"
 
 #include <string>
 #include <trieste/driver.h>
