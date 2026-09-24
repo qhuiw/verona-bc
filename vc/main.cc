@@ -2,13 +2,13 @@
 
 #include <git2.h>
 #include <trieste/driver.h>
-#include <vbcc/bytecode.h>
+#include <virc/bytecode.h>
 
 int main(int argc, char** argv)
 {
   using namespace vc;
 
-  auto state = std::make_shared<Bytecode>();
+  auto state = std::make_shared<virc::Bytecode>();
   auto parse = vc::parser();
   auto struc = vc::structure(parse);
 
@@ -24,12 +24,12 @@ int main(int argc, char** argv)
       anf(),
       infer(),
       reify(),
-      vbcc::memo(),
-      vbcc::assignids(state),
-      vbcc::validids(state),
-      vbcc::typecheck(state),
-      vbcc::optimize(state),
-      vbcc::liveness(state),
+      virc::memo(),
+      virc::assign_ids(state),
+      virc::validate_ids(state),
+      virc::typecheck(state),
+      virc::optimize(state),
+      virc::liveness(state),
     },
     parse};
 

@@ -6,7 +6,7 @@
 int main(int argc, char** argv)
 {
   using namespace trieste;
-  using namespace vbcc;
+  using namespace virc;
 
   auto state = std::make_shared<Bytecode>();
   Reader reader{
@@ -14,8 +14,8 @@ int main(int argc, char** argv)
     {statements(),
      labels(),
      memo(),
-     assignids(state),
-     validids(state),
+    assign_ids(state),
+    validate_ids(state),
      typecheck(state),
      optimize(state),
      liveness(state)},

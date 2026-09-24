@@ -3,11 +3,12 @@
 #include "bitset.h"
 #include "stringtable.h"
 
-#include <vbcc.h>
+#include <vir.h>
 #include <vbci.h>
 
-namespace vbcc
+namespace virc
 {
+  using namespace vir;
   using namespace trieste;
 
   struct LookupInfo
@@ -131,4 +132,9 @@ namespace vbcc
     void gen(std::filesystem::path output, bool strip);
     size_t typ(Node type);
   };
+}
+
+namespace vbcc
+{
+  using namespace virc;
 }
