@@ -70,5 +70,5 @@ Stripped VBC files end after the instruction stream and omit this section.
 ## Compatibility
 
 `include/vbci.h` is a migration header that imports the neutral VBC names into
-namespace `vbci`. New producers and format-aware tools include `vbc/format.h`
-directly. Interpreter live state remains private under `vbci/`.
+namespace `vbci`. New producers and format-aware tools include
+`vbc/format.h` directly. Interpreter live state remains private under `vbci/`.

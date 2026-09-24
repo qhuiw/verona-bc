@@ -14,7 +14,10 @@ The `vc` compiler is a multi-pass term rewriting compiler built on the [Trieste]
 
 ## 20.2 Pass Pipeline
 
-The compiler runs passes in two stages. The first 10 passes are the `vc` frontend, which transforms source code into monomorphized IR. The remaining passes are provided by the `vbcc` bytecode compiler library, which transforms IR into `.vbc` bytecode.
+The compiler runs passes in two stages. The first 10 passes are the `vc`
+frontend, which transforms source code into monomorphized VIR. The remaining
+passes are provided by VIRC, which creates output-neutral `Compilation` state
+for backend emitters.
 
 ### Frontend Passes (vc)
 
@@ -31,17 +34,19 @@ The compiler runs passes in two stages. The first 10 passes are the `vc` fronten
 | 8 | `infer` | once | Type inference and literal refinement |
 | 9 | `reify` | bottom-up | Monomorphization — generic instantiation starting from `main` |
 
-### Backend Passes (vbcc library)
+### VIRC Passes
 
 | # | Pass | Direction | Purpose |
 |---|------|-----------|---------|
 | 10 | `memo` | once | Split `once` functions into stub + init, topological sort, cycle detection |
-| 11 | `assignids` | once | Assign bytecode identifiers to classes, functions, methods |
+| 11 | `assignids` | once | Assign stable identifiers to classes, functions, methods |
 | 12 | `validids` | once | Validate identifier assignments for consistency |
-| 13 | `liveness` | once | Liveness analysis for register allocation |
-| 14 | `typecheck` | once | Final type checking |
+| 13 | `typecheck` | once | Final type checking and output-neutral type state |
+| 14 | `optimize` | once | Shared VIR optimization |
+| 15 | `liveness` | once | Liveness analysis and explicit drops |
 
-After all passes complete, bytecode generation produces a `.vbc` file. In practice, `vc build` invokes both stages — the user does not need to run them separately.
+After all passes complete, VC's VBC emitter produces a `.vbc` file. In
+practice, `vc build` invokes both stages; the user does not run VIRC separately.
 
 ---
 
@@ -138,14 +143,17 @@ This creates one `.trieste` file per pass in the dump directory, letting you ins
 
 ---
 
-## 20.8 Standalone Bytecode Compiler (vbcc)
+## 20.8 Standalone VIR Compiler (virc)
 
-The `vbcc` tool can also be run standalone on Trieste IR files (produced by `vc` with `-p reify`). When used standalone, `vbcc` prepends two additional passes before the shared backend passes:
+The `virc` tool can also be run standalone on textual VIR files (produced by
+`vc` with `-p reify`). It prepends two reader passes before the shared VIRC
+pipeline:
 
 | # | Pass | Purpose |
 |---|------|---------|
 | 0 | `statements` | Parse Trieste IR text into statement sequences |
 | 1 | `labels` | Resolve jump targets and label offsets |
-| 2–5 | (shared) | `assignids` → `validids` → `liveness` → `typecheck` |
+| 2–7 | (shared) | `memo` → `assignids` → `validids` → `typecheck` → `optimize` → `liveness` |
 
-When `vc build` is used (the normal workflow), these two additional passes are not needed — `vc` passes the AST directly to the `vbcc` library's backend passes.
+When `vc build` is used, these reader passes are not needed because VC passes
+VIR directly to `virc_core`. The `vbcc` command remains as a migration alias.
