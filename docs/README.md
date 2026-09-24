@@ -17,6 +17,7 @@ material.
 - [VIRC internals](../virc/docs/README.md)
 - [VBC emitter](../virc/vbc/README.md)
 - [VBCI interpreter](../vbci/README.md)
+- [Testsuite](../testsuite/README.md)
 
 Language semantics belong in the language manual, cross-component contracts
 belong under `formats/` or `architecture/`, and implementation details belong

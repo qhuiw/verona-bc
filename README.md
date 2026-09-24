@@ -38,6 +38,7 @@ VIRC commands.
 | [VIRC](virc/README.md) | Shared VIR validation, analysis, and output-neutral compilation state |
 | [VBCI](vbci/README.md) | VBC loader and interpreter runtime |
 | [Interchange formats](docs/formats/README.md) | VIR and VBC contracts and compatibility |
+| [Testsuite](testsuite/README.md) | Source, VIR, VBC, LLVM, and runtime test pipelines |
 
 The current architecture and accepted decisions are indexed in
 [Architecture](docs/architecture/README.md). Verona language documentation is
