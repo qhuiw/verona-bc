@@ -15,6 +15,7 @@
 #include <optional>
 #include <string>
 #include <unordered_map>
+#include <vbci.h>
 #include <vector>
 
 namespace vbcc

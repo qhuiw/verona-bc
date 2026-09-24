@@ -16,7 +16,7 @@ int main(int argc, char** argv)
     LLVMIR,
   };
 
-  auto state = std::make_shared<Bytecode>();
+  auto state = std::make_shared<Compilation>();
   Reader reader{
     "vbcc",
     {statements(),
@@ -110,12 +110,12 @@ int main(int argc, char** argv)
   switch (opts.output_format)
   {
     case OutputFormat::VBC:
-      state->gen_vbc(opts.output_file, opts.strip);
+      vbc_backend::emit(*state, opts.output_file, opts.strip);
       break;
 
     case OutputFormat::LLVMIR:
 #if defined(VERONA_ENABLE_LLVM_BACKEND)
-      if (!state->gen_llvm(opts.output_file))
+  if (!gen_llvm(*state, opts.output_file))
         return -1;
 #else
       logging::Error() << "vbcc was built without LLVM backend support"

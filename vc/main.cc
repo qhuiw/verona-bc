@@ -8,7 +8,7 @@ int main(int argc, char** argv)
 {
   using namespace vc;
 
-  auto state = std::make_shared<virc::Bytecode>();
+  auto state = std::make_shared<virc::Compilation>();
   auto parse = vc::parser();
   auto struc = vc::structure(parse);
 
@@ -92,6 +92,6 @@ int main(int argc, char** argv)
   if (!opts.path.empty())
     state->add_path(opts.path);
 
-  state->gen_vbc(opts.bytecode_file, opts.strip);
+  virc::vbc_backend::emit(*state, opts.bytecode_file, opts.strip);
   return 0;
 }
