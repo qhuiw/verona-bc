@@ -2,6 +2,7 @@
 
 #include <git2.h>
 #include <trieste/driver.h>
+#include <virc/compile.h>
 #include <virc/vbc/emitter.h>
 
 int main(int argc, char** argv)
@@ -11,27 +12,21 @@ int main(int argc, char** argv)
   auto state = std::make_shared<virc::Compilation>();
   auto parse = vc::parser();
   auto struc = vc::structure(parse);
+  std::vector<Pass> passes{
+    struc,
+    ident(),
+    sugar(),
+    functype(),
+    dot(),
+    application(),
+    anf(),
+    infer(),
+    reify(),
+  };
+  auto virc_passes = virc::pipeline(state);
+  passes.insert(passes.end(), virc_passes.begin(), virc_passes.end());
 
-  Reader reader{
-    "vc",
-    {
-      struc,
-      ident(),
-      sugar(),
-      functype(),
-      dot(),
-      application(),
-      anf(),
-      infer(),
-      reify(),
-      virc::memo(),
-      virc::assign_ids(state),
-      virc::validate_ids(state),
-      virc::typecheck(state),
-      virc::optimize(state),
-      virc::liveness(state),
-    },
-    parse};
+  Reader reader{"vc", passes, parse};
 
   struct Options : public trieste::Options
   {
@@ -92,6 +87,6 @@ int main(int argc, char** argv)
   if (!opts.path.empty())
     state->add_path(opts.path);
 
-  virc::vbc_backend::emit(*state, opts.bytecode_file, opts.strip);
+  virc::vbc::emit(*state, opts.bytecode_file, opts.strip);
   return 0;
 }

@@ -1,5 +1,6 @@
 add_library(libvbcc STATIC
   analysis/bitset.cc
+  compile.cc
   model/compilation.cc
   model/name_table.cc
   model/type_table.cc

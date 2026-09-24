@@ -20,7 +20,7 @@
 
 namespace vbcc
 {
-  using namespace vbc;
+  using namespace ::vbc;
   using namespace virc;
 
   namespace llvm_backend

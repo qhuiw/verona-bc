@@ -51,6 +51,8 @@ backend work that is not part of the shared VIRC/VBC migration.
 | Inline emitter type encoding | `virc/vbc/type_encoding.{h,cc}` | Region operands and structured type-table serialization |
 | Inline emitter instruction chain | `virc/vbc/instruction_encoder.{h,cc}` | VIR statement and terminator lowering to VBC operations |
 | Inline emitter debug state | `virc/vbc/debug_info.{h,cc}` | Source mapping, debug operations, and compressed debug payloads |
+| Duplicated frontend pass lists | `virc/compile.{h,cc}` | Shared VIRC pipeline and compile result API |
+| `virc::vbc_backend::emit` callers | `virc::vbc::emit` | Public VBC emission API over read-only compilation state |
 | `vbcc/llvm/**` | `vbcc/llvm/**` | Legacy optional backend pending its separate migration |
 
 The extraction phases extend this table with symbol-level destinations. Line
