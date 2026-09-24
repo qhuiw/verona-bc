@@ -98,7 +98,7 @@ install(CODE [[
   ]])
 
 add_subdirectory(vrt)
-add_subdirectory(vbcc)
+add_subdirectory(virc)
 add_subdirectory(vbci)
 add_subdirectory(vc)
 enable_testing()

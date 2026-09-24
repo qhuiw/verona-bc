@@ -1,9 +1,9 @@
 #include "../lang.h"
 
-namespace vbcc
+namespace virc
 {
   const auto wfParserTokens = Lib | Type | Primitive | Class | Func | Vars |
-    Source | GlobalId | LocalId | LabelId | Equals | LParen | RParen |
+    vir::Source | GlobalId | LocalId | LabelId | Equals | LParen | RParen |
     LBracket | RBracket | Comma | Colon | Union | TupleType | Vararg |
     wfRegionType | wfPrimitiveType | Dyn | Ref | Cown | wfStatement |
     wfTerminator | wfLiteral | String | RawString;
@@ -166,7 +166,7 @@ namespace vbcc
         "," >> [](auto& m) { m.add(Comma); },
         ":" >> [](auto& m) { m.add(Colon); },
         "\\|" >> [](auto& m) { m.add(Union); },
-        "#" >> [](auto& m) { m.add(Source); },
+        "#" >> [](auto& m) { m.add(vir::Source); },
         "\\.\\.\\." >> [](auto& m) { m.add(Vararg); },
 
         // Identifiers.

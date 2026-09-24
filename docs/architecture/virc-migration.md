@@ -1,0 +1,58 @@
+# VBCC to VIRC Migration
+
+## Scope
+
+The shared compiler is moving from `vbcc/` to `virc/` so its analyzed state
+and passes can serve more than one output backend. VIR names the in-memory
+representation; VIRC names the compiler that validates and analyzes it.
+
+This document records repository-facing path, symbol, and compatibility
+changes. It intentionally excludes branch-rewrite procedures and local
+backend work that is not part of the shared VIRC/VBC migration.
+
+## Migration Phases
+
+| Phase | Status | Result |
+| --- | --- | --- |
+| Mechanical source move | Complete | Shared sources retain one-to-one history under `virc/`. |
+| Concept rename | Complete | `vir` owns VIR tokens and `virc` owns compiler code. |
+| Responsibility extraction | Pending | Analysis, support, reader, model, and VBC encoding gain dedicated homes. |
+| Build target split | Pending | Core, reader, and VBC emitter targets become independently consumable. |
+| Compatibility removal | Pending | Legacy names remain until downstream users migrate. |
+
+## Current Source Map
+
+| Previous owner | Current owner | Responsibility |
+| --- | --- | --- |
+| `include/vbcc.h` | `include/vir.h` | Public VIR tokens and well-formedness contracts |
+| `vbcc/*.h`, `vbcc/*.cc` | `virc/*.h`, `virc/*.cc` | Shared compiler implementation |
+| `vbcc/passes/**` | `virc/passes/**` | VIR validation, analysis, and optimization passes |
+| `vbcc/llvm/**` | `vbcc/llvm/**` | Legacy optional backend pending its separate migration |
+
+The extraction phases extend this table with symbol-level destinations. Line
+numbers belong in the corresponding commit bodies because they are tied to a
+specific parent snapshot.
+
+## Renamed Concepts
+
+| Previous name | Current name |
+| --- | --- |
+| `vbcc` token namespace | `vir` |
+| `vbcc` compiler namespace | `virc` |
+| `assignids` C++ API | `assign_ids` |
+| `validids` C++ API | `validate_ids` |
+
+Pass display names remain `assignids` and `validids` so command-line pass
+selection and existing golden output stay stable during migration.
+
+## Compatibility
+
+- `include/vbcc.h` forwards the former token namespace to `vir`.
+- The `vbcc` executable and existing CMake target names remain available
+  during the transition.
+- Compatibility layers forward to one implementation; they do not duplicate
+  compiler or emitter code.
+
+Compatibility can be removed after downstream source includes, CMake target
+references, scripts, and pass invocations have migrated and the deprecation
+has crossed one documented transition period.

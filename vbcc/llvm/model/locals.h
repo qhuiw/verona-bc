@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../../lang.h"
+#include "../../../virc/lang.h"
 #include "representation.h"
 
 #include <optional>

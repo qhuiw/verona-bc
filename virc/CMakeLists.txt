@@ -1,10 +1,10 @@
 add_library(libvbcc STATIC
-  passes/assignids.cc
+  passes/assign_ids.cc
   passes/liveness.cc
   passes/memo.cc
   passes/optimize.cc
   passes/typecheck.cc
-  passes/validids.cc
+  passes/validate_ids.cc
   bitset.cc
   bytecode.cc
   lang.cc
@@ -27,7 +27,10 @@ target_link_libraries(libvbcc PUBLIC
 add_library(vbc::vbcc ALIAS libvbcc)
 
 if(VERONA_ENABLE_LLVM_BACKEND)
-  add_subdirectory(llvm)
+  add_subdirectory(
+    ${CMAKE_CURRENT_SOURCE_DIR}/../vbcc/llvm
+    ${CMAKE_CURRENT_BINARY_DIR}/llvm
+  )
 endif()
 
 add_executable(vbcc

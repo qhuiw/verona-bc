@@ -5,7 +5,7 @@
 #include <type_traits>
 #include <zstd.h>
 
-namespace vbcc
+namespace virc
 {
   using namespace vbci;
 
@@ -802,7 +802,7 @@ namespace vbcc
 
         for (Node stmt : *(label / Body))
         {
-          if (stmt == Source)
+          if (stmt == vir::Source)
           {
             adv_di();
             di_file = ST::di().string(stmt / String);

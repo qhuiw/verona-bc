@@ -1,9 +1,9 @@
 #include "../irsubtype.h"
 #include "../lang.h"
 
-namespace vbcc
+namespace virc
 {
-  PassDef assignids(std::shared_ptr<Bytecode> state)
+  PassDef assign_ids(std::shared_ptr<Bytecode> state)
   {
     PassDef p{
       "assignids",

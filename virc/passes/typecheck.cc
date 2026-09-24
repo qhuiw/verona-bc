@@ -4,7 +4,7 @@
 #include <map>
 #include <queue>
 
-namespace vbcc
+namespace virc
 {
   // Static type checker for the IR. Runs after liveness to catch type errors
   // at compile time that would otherwise be runtime errors in the interpreter.
@@ -1926,7 +1926,7 @@ namespace vbcc
           // SetRaise returns previous raise target as U64.
           set_type(env, node / LocalId, U64);
         }
-        else if (node == Source || node == Offset)
+        else if (node == vir::Source || node == Offset)
         {
           // Debug info, no type effect.
         }

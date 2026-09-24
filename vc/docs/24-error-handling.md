@@ -370,7 +370,7 @@ yet raise them correctly end to end:
 
 The source-of-truth lists and checks are in
 [`vbci/ident.h`](../../vbci/ident.h),
-[`vbcc/passes/typecheck.cc`](../../vbcc/passes/typecheck.cc), and
+[`virc/passes/typecheck.cc`](../../virc/passes/typecheck.cc), and
 [`include/vrt/error.h`](../../include/vrt/error.h).
 
 ---

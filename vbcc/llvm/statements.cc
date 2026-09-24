@@ -6,7 +6,7 @@ namespace vbcc
   {
     bool LLVMCodegen::emit_statement(const Node& statement)
     {
-      if ((statement == Source) || (statement == Offset))
+      if ((statement == vir::Source) || (statement == Offset))
         return true;
 
       if (statement == Const)

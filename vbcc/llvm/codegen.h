@@ -1,7 +1,7 @@
 #pragma once
 
-#include "../bytecode.h"
-#include "../lang.h"
+#include "../../virc/bytecode.h"
+#include "../../virc/lang.h"
 #include "model/blocks.h"
 #include "model/dispatch.h"
 #include "model/locals.h"

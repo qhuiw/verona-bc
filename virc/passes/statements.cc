@@ -1,6 +1,6 @@
 #include "../lang.h"
 
-namespace vbcc
+namespace virc
 {
   const auto IntType =
     T(I8, I16, I32, I64, U8, U16, U32, U64, ILong, ULong, ISize, USize);
@@ -235,12 +235,12 @@ namespace vbcc
           [](Match& _) { return Seq << _(Lhs) << _(Type); },
 
         // Source file and offset.
-        (T(Source) << End) * ~T(String)[String] * ~T(Int)[Int] >>
+        (T(vir::Source) << End) * ~T(String)[String] * ~T(Int)[Int] >>
           [](Match& _) {
             Node seq = Seq;
 
             if (_(String))
-              seq << (Source << _(String));
+              seq << (vir::Source << _(String));
 
             if (_(Int))
               seq << (Offset << _(Int));
