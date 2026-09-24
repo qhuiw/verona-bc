@@ -39,6 +39,11 @@ backend work that is not part of the shared VIRC/VBC migration.
 | `virc/passes/labels.cc` | `virc/reader/labels.cc` | Textual body-to-label grouping |
 | `virc/lang.h` reader declarations | `virc/reader/reader.h` | Textual reader API |
 | `virc/bytecode.{h,cc}` | `virc/vbc/emitter.{h,cc}` | Primary descendant of the VBC serialization monolith |
+| `virc/vbc/emitter.h` compilation state | `virc/model/compilation.h` | Output-neutral analyzed compilation state |
+| `virc/vbc/emitter.cc` state methods | `virc/model/compilation.cc` | Compilation indexing and liveness state |
+| `virc/stringtable.{h,cc}` | `virc/model/name_table.{h,cc}` | Interned execution and debug names |
+| Encoded complex type byte vectors | `virc/model/type_table.{h,cc}` | Structured backend-neutral type records |
+| Reserved semantic IDs | `virc/model/ids.h` | Backend-neutral compiler indices |
 | `vbcc/llvm/**` | `vbcc/llvm/**` | Legacy optional backend pending its separate migration |
 
 The extraction phases extend this table with symbol-level destinations. Line

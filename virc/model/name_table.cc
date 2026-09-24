@@ -1,6 +1,4 @@
-#include "stringtable.h"
-
-#include "lang.h"
+#include "name_table.h"
 
 namespace virc
 {

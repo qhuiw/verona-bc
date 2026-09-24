@@ -9,7 +9,7 @@ int main(int argc, char** argv)
   using namespace trieste;
   using namespace virc;
 
-  auto state = std::make_shared<Bytecode>();
+  auto state = std::make_shared<Compilation>();
   Reader reader{
     "vbcc",
     {statements(),
@@ -71,6 +71,6 @@ int main(int argc, char** argv)
   if (!opts.path.empty())
     state->add_path(opts.path);
 
-  state->gen(opts.bytecode_file, opts.strip);
+  vbc_backend::emit(*state, opts.bytecode_file, opts.strip);
   return 0;
 }

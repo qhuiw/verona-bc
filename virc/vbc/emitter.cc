@@ -3,6 +3,7 @@
 #include "../lang.h"
 
 #include <type_traits>
+#include <vbci.h>
 #include <zstd.h>
 
 namespace virc
@@ -109,412 +110,19 @@ namespace virc
     return size_t(-1);
   }
 
-  size_t VecHash::operator()(const std::vector<uint8_t>& v) const noexcept
+  namespace
   {
-    auto h = size_t(14695981039346656037ull);
-
-    for (auto b : v)
-      h = (h ^ b) * size_t(1099511628211ull);
-
-    return h;
-  }
-
-  void LabelState::resize(size_t size)
-  {
-    first_def.resize(size);
-    first_use.resize(size);
-    last_use.resize(size);
-    in.resize(size);
-    defd.resize(size);
-    dead.resize(size);
-    out.resize(size);
-    used.resize(size);
-  }
-
-  std::pair<bool, std::string> LabelState::def(size_t r, Node& node, bool var)
-  {
-    // Not a var, and has alrady been defined, should not be able to re-define
-    if (!var && defd.test(r))
-      return {false, "redefinition of register"};
-
-    defd.set(r);
-
-    // Not a var, is in the in set (which means it has been used but not
-    // defined) then this is a use before def error
-    if (!var && in.test(r))
-      return {false, "use before def"};
-
-    if (out.test(r))
+    struct VBCEmitter : Compilation
     {
-      // Assigning to a non-variable used register is an error.
-      if (!var)
-        return {false, "redefinition of register"};
+      explicit VBCEmitter(const Compilation& compilation)
+      : Compilation(compilation)
+      {}
 
-      automove(r);
-    }
-    else
-    {
-      out.set(r);
-      dead.reset(r);
-    }
-
-    if (!first_def.at(r))
-      first_def[r] = node;
-
-    if (!first_use.at(r))
-      first_use[r] = node;
-
-    last_use[r] = {};
-    return {true, ""};
+      void emit(std::filesystem::path output, bool strip);
+    };
   }
 
-  bool LabelState::use(size_t r, Node& node)
-  {
-    // We've used a register. If it's not live, we require it and set it as
-    // live.
-    if (dead.test(r))
-      return false;
-
-    used.set(r);
-
-    if (!out.test(r))
-    {
-      out.set(r);
-      in.set(r);
-    }
-
-    if (!first_use.at(r))
-      first_use[r] = node;
-
-    last_use[r] = node;
-    return true;
-  }
-
-  bool LabelState::kill(size_t r)
-  {
-    // We've killed a register. If it's live, we kill it. If it's not live, we
-    // require it.
-    if (dead.test(r))
-      return false;
-
-    used.set(r);
-
-    if (out.test(r))
-      out.reset(r);
-    else
-      in.set(r);
-
-    dead.set(r);
-    last_use[r] = {};
-    return true;
-  }
-
-  void LabelState::automove(size_t r)
-  {
-    auto n = last_use.at(r);
-
-    if (!n)
-      return;
-
-    last_use[r] = {};
-    auto parent = n->parent();
-
-    if ((parent == Arg) && (parent->front() == ArgCopy))
-      parent / Type = ArgMove;
-    else if (parent == Copy)
-      parent->parent()->replace(parent, Move << *parent);
-  }
-
-  std::optional<size_t> FuncState::get_label_id(Node id)
-  {
-    auto index = ST::noemit().string(id->location().view());
-    auto find = label_idxs.find(index);
-
-    if (find == label_idxs.end())
-      return {};
-
-    return find->second;
-  }
-
-  LabelState& FuncState::get_label(Node id)
-  {
-    auto index = ST::noemit().string(id->location().view());
-    auto find = label_idxs.find(index);
-    return labels.at(find->second);
-  }
-
-  bool FuncState::add_label(Node id)
-  {
-    auto index = ST::noemit().string(id->location().view());
-    auto find = label_idxs.find(index);
-
-    if (find != label_idxs.end())
-      return false;
-
-    label_idxs.insert({index, label_idxs.size()});
-    labels.emplace_back();
-    return true;
-  }
-
-  std::optional<size_t> FuncState::get_register_id(Node id)
-  {
-    auto index = ST::di().string(id);
-    auto find = register_idxs.find(index);
-
-    if (find == register_idxs.end())
-      return {};
-
-    return find->second;
-  }
-
-  bool FuncState::add_register(Node id)
-  {
-    auto index = ST::di().string(id);
-    auto find = register_idxs.find(index);
-
-    if (find != register_idxs.end())
-      return false;
-
-    register_idxs.insert({index, register_idxs.size()});
-    register_names.push_back(index);
-    assert(register_idxs.size() == register_names.size());
-    return true;
-  }
-
-  Bytecode::Bytecode()
-  {
-    primitives.resize(NumPrimitiveClasses);
-
-    // Reserve a function ID for `@main`.
-    auto main_name = ST::di().string("@main");
-    auto func_main = FuncState(nullptr);
-    func_main.name = main_name;
-    functions.push_back(func_main);
-    func_ids.insert({main_name, MainFuncId});
-
-    // Reserve a method ID for `@final`.
-    method_ids.insert({ST::di().string("@final"), FinalMethodId});
-
-    // Reserve a method ID for `@callback`.
-    method_ids.insert({ST::di().string("@callback"), CallbackMethodId});
-  }
-
-  void Bytecode::add_path(const std::filesystem::path& path)
-  {
-    auto full = std::filesystem::canonical(path);
-
-    if (!std::filesystem::is_directory(full))
-      full = full.parent_path();
-
-    source_paths.push_back(full);
-  }
-
-  std::optional<size_t> Bytecode::get_typealias_id(Node id)
-  {
-    auto name = ST::di().string(id);
-    auto find = type_ids.find(name);
-
-    if (find == type_ids.end())
-      return {};
-
-    return find->second;
-  }
-
-  Node Bytecode::get_typealias(Node id)
-  {
-    auto name = ST::di().string(id);
-    auto find = type_ids.find(name);
-    return typealiases.at(find->second);
-  }
-
-  bool Bytecode::add_typealias(Node type)
-  {
-    auto name = ST::di().string(type / TypeId);
-    auto find = type_ids.find(name);
-
-    if (find != type_ids.end())
-      return false;
-
-    type_ids.insert({name, type_ids.size()});
-    typealiases.push_back(type);
-    return true;
-  }
-
-  std::optional<size_t> Bytecode::get_class_id(Node id)
-  {
-    auto name = ST::di().string(id);
-    auto find = class_ids.find(name);
-
-    if (find == class_ids.end())
-      return {};
-
-    return find->second;
-  }
-
-  bool Bytecode::add_class(Node cls)
-  {
-    auto name = ST::di().string(cls / ClassId);
-    auto find = class_ids.find(name);
-
-    if (find != class_ids.end())
-      return false;
-
-    class_ids.insert({name, class_ids.size()});
-    classes.push_back(cls);
-    return true;
-  }
-
-  std::optional<size_t> Bytecode::get_field_id(Node id)
-  {
-    auto name = ST::di().string(id);
-    auto find = field_ids.find(name);
-
-    if (find == field_ids.end())
-      return {};
-
-    return find->second;
-  }
-
-  void Bytecode::add_field(Node field)
-  {
-    auto name = ST::di().string(field / FieldId);
-    auto find = field_ids.find(name);
-
-    if (find == field_ids.end())
-      field_ids.insert({name, field_ids.size()});
-  }
-
-  std::optional<size_t> Bytecode::get_method_id(Node id)
-  {
-    auto name = ST::di().string(id);
-    auto find = method_ids.find(name);
-
-    if (find == method_ids.end())
-      return {};
-
-    return find->second;
-  }
-
-  void Bytecode::add_method(Node method)
-  {
-    auto name = ST::di().string(method / MethodId);
-    auto find = method_ids.find(name);
-
-    if (find == method_ids.end())
-      method_ids.insert({name, method_ids.size()});
-  }
-
-  std::optional<size_t> Bytecode::get_func_id(Node id)
-  {
-    auto name = ST::di().string(id);
-    auto find = func_ids.find(name);
-
-    if (find == func_ids.end())
-      return {};
-
-    // Pretend not to have an id if the function name is reserved.
-    auto func_id = find->second;
-
-    if (!functions.at(func_id).func)
-      return {};
-
-    return func_id;
-  }
-
-  FuncState& Bytecode::get_func(Node id)
-  {
-    auto name = ST::di().string(id);
-    auto find = func_ids.find(name);
-    return functions.at(find->second);
-  }
-
-  FuncState& Bytecode::add_func(Node func)
-  {
-    auto name = ST::di().string(func / FunctionId);
-    auto find = func_ids.find(name);
-    size_t func_id;
-
-    if (find == func_ids.end())
-    {
-      // This is a fresh func_id.
-      func_id = func_ids.size();
-      func_ids.insert({name, func_id});
-      functions.push_back(func);
-    }
-    else
-    {
-      // This is a reserved func_id.
-      func_id = find->second;
-      functions.at(func_id).func = func;
-    }
-
-    auto& func_state = functions.at(func_id);
-    func_state.name = name;
-    func_state.params = (func / Params)->size();
-    return func_state;
-  }
-
-  std::optional<size_t> Bytecode::get_symbol_id(Node id)
-  {
-    auto name = ST::noemit().string(id);
-    auto find = symbol_ids.find(name);
-
-    if (find == symbol_ids.end())
-      return {};
-
-    return find->second;
-  }
-
-  Node Bytecode::get_symbol(Node id)
-  {
-    auto name = ST::noemit().string(id);
-    auto find = symbol_ids.find(name);
-
-    if (find == symbol_ids.end())
-      return {};
-
-    return symbols[find->second];
-  }
-
-  bool Bytecode::add_symbol(Node symbol)
-  {
-    auto name = ST::noemit().string(symbol / SymbolId);
-    auto find = symbol_ids.find(name);
-
-    if (find != symbol_ids.end())
-      return false;
-
-    ST::exec().string(symbol / Lhs);
-    ST::exec().string(symbol / Rhs);
-    symbol_ids.insert({name, symbol_ids.size()});
-    symbols.push_back(symbol);
-    return true;
-  }
-
-  std::optional<size_t> Bytecode::get_library_id(Node lib)
-  {
-    auto name = ST::exec().string(lib / String);
-    auto find = library_ids.find(name);
-
-    if (find == library_ids.end())
-      return {};
-
-    return find->second;
-  }
-
-  void Bytecode::add_library(Node lib)
-  {
-    auto name = ST::exec().string(lib / String);
-    auto find = library_ids.find(name);
-
-    if (find != library_ids.end())
-      return;
-
-    library_ids.insert({name, library_ids.size()});
-    libraries.push_back(lib);
-  }
-
-  void Bytecode::gen(std::filesystem::path output, bool strip)
+  void VBCEmitter::emit(std::filesystem::path output, bool strip)
   {
     wf::push_back(wfIR);
 
@@ -588,7 +196,7 @@ namespace virc
       for (auto& field : *fields)
       {
         hdr << uleb(*get_field_id(field / FieldId));
-        hdr << uleb(typ(field / Type));
+        hdr << uleb(type_id(field / Type));
         di << uleb(ST::di().string(field / FieldId));
       }
 
@@ -650,9 +258,9 @@ namespace virc
           << uleb((symbol / FFIParams)->size());
 
       for (auto& param : *(symbol / FFIParams))
-        hdr << uleb(typ(param));
+        hdr << uleb(type_id(param));
 
-      hdr << uleb(typ(symbol / Return));
+      hdr << uleb(type_id(symbol / Return));
     }
 
     // Functions.
@@ -667,16 +275,16 @@ namespace virc
       hdr << uleb(func_state.params);
 
       for (auto& param : *(func_state.func / Params))
-        hdr << uleb(typ(param / Type));
+        hdr << uleb(type_id(param / Type));
 
-      hdr << uleb(typ(func_state.func / Type));
+      hdr << uleb(type_id(func_state.func / Type));
 
       // Variable types.
       auto vars_node = func_state.func / Vars;
       hdr << uleb(vars_node->size());
 
       for (auto& var : *vars_node)
-        hdr << uleb(typ(var / Type));
+        hdr << uleb(type_id(var / Type));
 
       // Labels.
       hdr << uleb(func_state.label_idxs.size());
@@ -702,7 +310,7 @@ namespace virc
 
       auto src = rhs;
 
-      auto cls = [&](Node stmt) { return uleb(typ(stmt / ClassId)); };
+      auto cls = [&](Node stmt) { return uleb(type_id(stmt / ClassId)); };
 
       auto fld = [&](Node stmt) { return uleb(*get_field_id(stmt / FieldId)); };
 
@@ -930,45 +538,45 @@ namespace virc
           else if (stmt == NewArray)
           {
             code << uleb(+Op::NewArray) << dst(stmt) << rhs(stmt)
-                 << uleb(typ(stmt / Type));
+                 << uleb(type_id(stmt / Type));
           }
           else if (stmt == NewArrayConst)
           {
             code << uleb(+Op::NewArrayConst) << dst(stmt)
-                 << uleb(typ(stmt / Type))
+                 << uleb(type_id(stmt / Type))
                  << uleb(from_chars_sep_v<uint64_t>(stmt / Rhs));
           }
           else if (stmt == StackArray)
           {
             code << uleb(+Op::StackArray) << dst(stmt) << rhs(stmt)
-                 << uleb(typ(stmt / Type));
+                 << uleb(type_id(stmt / Type));
           }
           else if (stmt == StackArrayConst)
           {
             code << uleb(+Op::StackArrayConst) << dst(stmt)
-                 << uleb(typ(stmt / Type))
+                 << uleb(type_id(stmt / Type))
                  << uleb(from_chars_sep_v<uint64_t>(stmt / Rhs));
           }
           else if (stmt == HeapArray)
           {
             code << uleb(+Op::HeapArray) << dst(stmt) << lhs(stmt) << rhs(stmt)
-                 << uleb(typ(stmt / Type));
+                 << uleb(type_id(stmt / Type));
           }
           else if (stmt == HeapArrayConst)
           {
-            code << uleb(+Op::HeapArrayConst) << dst(stmt) << src(stmt)
-                 << uleb(typ(stmt / Type))
+            code << uleb(+Op::HeapArrayConst) << dst(stmt) << lhs(stmt)
+                 << uleb(type_id(stmt / Type))
                  << uleb(from_chars_sep_v<uint64_t>(stmt / Rhs));
           }
           else if (stmt == RegionArray)
           {
             code << uleb(+Op::RegionArray) << dst(stmt) << rgn(stmt)
-                 << rhs(stmt) << uleb(typ(stmt / Type));
+                 << rhs(stmt) << uleb(type_id(stmt / Type));
           }
           else if (stmt == RegionArrayConst)
           {
             code << uleb(+Op::RegionArrayConst) << dst(stmt) << rgn(stmt)
-                 << uleb(typ(stmt / Type))
+                 << uleb(type_id(stmt / Type))
                  << uleb(from_chars_sep_v<uint64_t>(stmt / Rhs));
           }
           else if (stmt == Copy)
@@ -1075,20 +683,20 @@ namespace virc
           }
           else if (stmt == FFIStruct)
           {
-            code << uleb(+Op::FFIStruct) << dst(stmt) << uleb(typ(stmt / Type));
+            code << uleb(+Op::FFIStruct) << dst(stmt) << uleb(type_id(stmt / Type));
           }
           else if (stmt == FFILoad)
           {
             code << uleb(+Op::FFILoad) << dst(stmt) << lhs(stmt) << rhs(stmt)
                  << uleb(*func_state.get_register_id(stmt / Kind))
-                 << uleb(typ(stmt / Type));
+                 << uleb(type_id(stmt / Type));
           }
           else if (stmt == FFIStore)
           {
             code << uleb(+Op::FFIStore) << dst(stmt) << lhs(stmt) << rhs(stmt)
                  << uleb(*func_state.get_register_id(stmt / Kind))
                  << uleb(*func_state.get_register_id(stmt / ValueSrc))
-                 << uleb(typ(stmt / Type));
+                 << uleb(type_id(stmt / Type));
           }
           else if (stmt == ArrayCopy)
           {
@@ -1108,14 +716,14 @@ namespace virc
           else if (stmt == When)
           {
             args(stmt / Args);
-            code << uleb(+Op::WhenStatic) << dst(stmt) << uleb(typ(stmt / Cown))
+            code << uleb(+Op::WhenStatic) << dst(stmt) << uleb(type_id(stmt / Cown))
                  << fn(stmt);
           }
           else if (stmt == WhenDyn)
           {
             args(stmt / Args);
             code << uleb(+Op::WhenDynamic) << dst(stmt)
-                 << uleb(typ(stmt / Cown)) << src(stmt);
+                 << uleb(type_id(stmt / Cown)) << src(stmt);
           }
           else if (stmt == Add)
           {
@@ -1360,7 +968,7 @@ namespace virc
           else if (stmt == Typetest)
           {
             code << uleb(+Op::Typetest) << dst(stmt) << src(stmt)
-                 << uleb(typ(stmt / Type));
+                 << uleb(type_id(stmt / Type));
           }
           else if (stmt == GetRaise)
           {
@@ -1415,7 +1023,45 @@ namespace virc
     hdr << uleb(types.size());
 
     for (auto& type : types)
-      hdr.insert(hdr.end(), type.begin(), type.end());
+    {
+      TypeTag tag;
+
+      switch (type.kind)
+      {
+        case TypeKind::Array:
+          tag = TypeTag::Array;
+          break;
+        case TypeKind::Cown:
+          tag = TypeTag::Cown;
+          break;
+        case TypeKind::Ref:
+          tag = TypeTag::Ref;
+          break;
+        case TypeKind::Union:
+          tag = TypeTag::Union;
+          break;
+        case TypeKind::Tuple:
+          tag = TypeTag::Tuple;
+          break;
+      }
+
+      hdr << uleb(+tag);
+
+      if (
+        type.kind == TypeKind::Array || type.kind == TypeKind::Cown ||
+        type.kind == TypeKind::Ref)
+      {
+        assert(type.elements.size() == 1);
+        hdr << uleb(type.elements.front());
+      }
+      else
+      {
+        hdr << uleb(type.elements.size());
+
+        for (auto element : type.elements)
+          hdr << uleb(element);
+      }
+    }
 
     // Memo init list.
     if (memo_init_node)
@@ -1480,95 +1126,11 @@ namespace virc
     wf::pop_front();
   }
 
-  size_t Bytecode::typ(Node type)
+  void vbc_backend::emit(
+    const Compilation& compilation,
+    const std::filesystem::path& output,
+    bool strip)
   {
-    // If it's a TypeId, encode what it maps to instead.
-    // Loop to follow chained aliases (e.g., cb -> fn$N -> Union).
-    while (type == TypeId)
-      type = get_typealias(type) / Type;
-
-    if (type == Dyn)
-    {
-      return DynId;
-    }
-    else if (type->in(
-               {None,
-                Bool,
-                I8,
-                U8,
-                I16,
-                U16,
-                I32,
-                U32,
-                I64,
-                U64,
-                ILong,
-                ULong,
-                ISize,
-                USize,
-                F32,
-                F64,
-                Ptr}))
-    {
-      return +val(type);
-    }
-    else if (type == ClassId)
-    {
-      // Class IDs are offset for primitive types.
-      return *get_class_id(type) + NumPrimitiveClasses;
-    }
-
-    // Encode complex types.
-    std::vector<uint8_t> b;
-
-    if (type == Array)
-    {
-      b << uleb(+TypeTag::Array) << uleb(typ(type / Type));
-    }
-    else if (type == Cown)
-    {
-      b << uleb(+TypeTag::Cown) << uleb(typ(type / Type));
-    }
-    else if (type == Ref)
-    {
-      b << uleb(+TypeTag::Ref) << uleb(typ(type / Type));
-    }
-    else if (type == Union)
-    {
-      std::vector<size_t> child_types;
-
-      for (auto& child : *type)
-        child_types.push_back(typ(child));
-
-      std::sort(child_types.begin(), child_types.end());
-      child_types.erase(
-        std::unique(child_types.begin(), child_types.end()), child_types.end());
-
-      b << uleb(+TypeTag::Union);
-      b << uleb(child_types.size());
-
-      for (auto t : child_types)
-        b << uleb(t);
-    }
-    else if (type == TupleType)
-    {
-      b << uleb(+TypeTag::Tuple);
-      b << uleb(type->size());
-
-      for (auto& child : *type)
-        b << uleb(typ(child));
-    }
-
-    // Check if we already have this type encoded.
-    auto find = type_map.find(b);
-    if (find != type_map.end())
-      return find->second;
-
-    // Otherwise, add it to the type map. Complex type IDs are offset for
-    // primitive types and class IDs.
-    auto id = type_map.size() + classes.size() + NumPrimitiveClasses;
-    type_map.insert({b, id});
-    types.push_back(b);
-    return id;
+    VBCEmitter(compilation).emit(output, strip);
   }
 }

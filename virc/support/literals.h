@@ -1,11 +1,12 @@
 #pragma once
 
+#include "../model/type_table.h"
+
 #include <charconv>
 #include <limits>
 #include <string>
 #include <string_view>
 #include <type_traits>
-#include <vbci.h>
 #include <vir.h>
 
 #if defined(PLATFORM_IS_MACOSX)
@@ -43,10 +44,9 @@ namespace std
 namespace virc
 {
   using namespace trieste;
-  using namespace vbci;
   using namespace vir;
 
-  ValueType val(Node ptype);
+  PrimitiveKind val(Node ptype);
   Node ffi_struct_result_type();
   std::string unescape(const std::string_view& in);
 

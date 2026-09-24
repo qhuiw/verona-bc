@@ -373,7 +373,7 @@ namespace virc
     return result;
   }
 
-  PassDef typecheck(std::shared_ptr<Bytecode> state)
+  PassDef typecheck(std::shared_ptr<Compilation> state)
   {
     PassDef p{"typecheck", wfIR, dir::topdown | dir::once, {}};
 
@@ -399,7 +399,7 @@ namespace virc
       };
 
       // Resolve TypeId to its definition (typically a Union) through the
-      // assignids-built Bytecode map. Recursively resolves through Union,
+      // assignids-built Compilation map. Recursively resolves through Union,
       // Array, Cown, and Ref.
       std::function<Node(const Node&)> resolve_type =
         [&](const Node& t) -> Node {
@@ -663,7 +663,7 @@ namespace virc
         else if (node->in({New, Stack, Heap, Region}))
         {
           // dst gets the ClassId type. Check arg types vs field types, and
-          // require a non-singleton class (singletons must use Op::Singleton).
+          // require a non-singleton class (singletons use the Singleton statement).
           auto class_id = node / ClassId;
           auto args = node / Args;
           auto cls = find_class(class_id);

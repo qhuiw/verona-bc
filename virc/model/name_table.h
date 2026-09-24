@@ -9,6 +9,7 @@
 namespace virc
 {
   using namespace vir;
+
   struct ST
   {
     using Index = size_t;
