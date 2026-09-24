@@ -12,12 +12,6 @@ add_library(virc_llvm STATIC
   # Call terminators.
   calls/tailcall.cc
   calls/tailcall_dyn.cc
-  constants/addexternal.cc
-  constants/e.cc
-  constants/inf.cc
-  constants/nan.cc
-  constants/pi.cc
-  constants/removeexternal.cc
   functions/declaration.cc
   functions/descriptors.cc
   functions/emission.cc
@@ -49,11 +43,19 @@ add_library(virc_llvm STATIC
   statements/allocation/region.cc
   statements/allocation/region_array.cc
   statements/allocation/singleton.cc
+  # Callback statements.
+  statements/callbacks/addexternal.cc
+  statements/callbacks/removeexternal.cc
+  # Constant statements.
+  statements/constants/constant.cc
+  statements/constants/e.cc
+  statements/constants/inf.cc
+  statements/constants/nan.cc
+  statements/constants/pi.cc
   statements/arraycompare.cc
   statements/arraycopy.cc
   statements/arrayfill.cc
   statements/binop.cc
-  statements/constant.cc
   statements/convert.cc
   statements/copy.cc
   statements/drop.cc
