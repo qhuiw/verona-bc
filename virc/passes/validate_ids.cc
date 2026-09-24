@@ -127,7 +127,7 @@ namespace virc
           auto method = _(Method);
           auto id = state->get_method_id(method / MethodId);
 
-          if (*id == FinalizerMethodIndex)
+          if (*id == FinalizerMethodId)
           {
             auto func_id = state->get_func_id(method / FunctionId);
             if (state->functions.at(*func_id).params != 1)
