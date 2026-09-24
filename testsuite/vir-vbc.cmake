@@ -29,7 +29,7 @@ function(vir_test_define test)
     GOLDENS exit_code.txt stderr.txt stdout.txt
     ${artifact_metadata}
     COMMAND
-      "${CMAKE_INSTALL_PREFIX}/vbcc/$<TARGET_FILE_NAME:vbcc>"
+      "${CMAKE_INSTALL_PREFIX}/virc/$<TARGET_FILE_NAME:virc>"
       build "${test_file}"
       --emit vbc
       --output-file "${bytecode}"
