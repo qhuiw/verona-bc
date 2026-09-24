@@ -78,7 +78,7 @@ function(llvm_test_define test)
     GOLDENS exit_code.txt stderr.txt stdout.txt
     ARTIFACTS "${llvm_ir_name}"
     COMMAND
-      "${CMAKE_INSTALL_PREFIX}/vbcc/$<TARGET_FILE_NAME:vbcc>"
+      "${CMAKE_INSTALL_PREFIX}/virc/$<TARGET_FILE_NAME:virc>"
       build "${test_file}"
       --emit llvm-ir
       --output-file "${llvm_ir}"

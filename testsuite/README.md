@@ -1,19 +1,19 @@
 # Testsuite
 
-The shared testsuite registers named CTest DAGs from top-level collection
-files:
+The testsuite registers named CTest DAGs from top-level collection files:
 
 | Collection | Pipeline |
 | --- | --- |
 | `vc-vbc.cmake` | Verona source -> VC -> VBC -> VBCI |
+| `vc-llvm.cmake` | Allowlisted Verona source -> VC -> LLVM -> native VRT |
 | `vir-vbc.cmake` | Textual VIR -> VIRC -> VBC -> VBCI |
+| `vir-llvm.cmake` | Allowlisted textual VIR -> VIRC -> LLVM -> native VRT |
+| `vrt.cmake` | VRT API and internal tests |
 
-These collection names identify both the selected input and output backend.
-Native backend and runtime collections retain their existing names until their
-separate migration.
-
+LLVM collections register no tests when `VERONA_ENABLE_LLVM_BACKEND=OFF`.
 Every node has `exit_code.txt`, `stdout.txt`, and `stderr.txt` goldens; silent
-files are empty and exit-code files have no trailing newline.
+files are empty and exit-code files have no trailing newline. Native fixtures
+state their coverage and non-goals in a source header or adjacent README.
 
 Use `ninja update-dump` from `build/` to regenerate goldens and `ctest
 --output-on-failure` to verify them.

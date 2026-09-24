@@ -20,13 +20,14 @@ collection. Keep helpers in component subdirectories such as
 `testsuite/llvm/cmake/`; an adjacent helper would be mistaken for a
 collection.
 
-The four collections are:
+The five collections are:
 
 | Collection | Selected input | Registered graph |
 |---|---|---|
 | `vc-vbc.cmake` | `*.v` | Verona compile -> bytecode run |
+| `vc-llvm.cmake` | allowlisted `*.v` | Verona compile -> emit IR -> assemble -> codegen -> link -> native run |
 | `vir-vbc.cmake` | `*.vir` | VIR compile -> bytecode run |
-| `llvm.cmake` | `vir/{llvm,vrt}_*/{llvm,vrt}_*.vir` | emit IR -> assemble -> codegen -> link -> native run |
+| `vir-llvm.cmake` | `vir/{llvm,vrt}_*/{llvm,vrt}_*.vir` | emit IR -> assemble -> codegen -> link -> native run |
 | `vrt.cmake` | selected C/C++ sources under `vrt/` | build libvrt test targets and register run nodes |
 
 `vc-vbc.cmake` and `vir-vbc.cmake` omit the run node for sources below a
@@ -39,8 +40,8 @@ testsuite/vir/simp1/simp1.vir
 ```
 
 The `llvm_*` files remain ordinary VIR fixtures. Each is compiled and run as
-bytecode by `vir-vbc.cmake` and also follows the native LLVM graph registered by
-`llvm.cmake`. The `vrt_*` VIR fixtures exercise native VRT-specific behavior:
+bytecode by `vir-vbc.cmake` and also follows the native LLVM graph registered
+by `vir-llvm.cmake`. The `vrt_*` VIR fixtures exercise native VRT-specific behavior:
 they are compiled to validate the shared VIR input but do not register a VBCI
 run node. There is no duplicate LLVM source tree.
 
@@ -95,18 +96,20 @@ not copied into the source tree as goldens. Pass dumps are produced only when
 
 ### LLVM native
 
-`llvm.cmake` selects fixtures named `vir/llvm_*/llvm_*.vir` or
-`vir/vrt_*/vrt_*.vir`. Each fixture has five nodes:
+`vir-llvm.cmake` selects fixtures named `vir/llvm_*/llvm_*.vir` or
+`vir/vrt_*/vrt_*.vir`. `vc-llvm.cmake` currently allowlists
+`v/hello/hello.v`. Each selected fixture has five nodes:
 
 ```text
 emit-ir -> assemble -> codegen -> link -> run
    .ll        .bc        .o       executable
 ```
 
-The emit node uses installed `vbcc --emit llvm-ir`. Its validator rejects an
-`.ll` file without both a target data layout and target triple. `llvm-as`
-verifies and assembles the IR, `llc` emits the platform object, and the C++
-driver links it with installed `libvrt`.
+The emit node uses the installed compiler for its input language: `virc
+--emit llvm-ir` for textual VIR or `vc --emit llvm-ir` for Verona source. Its
+validator rejects an `.ll` file without both a target data layout and target
+triple. `llvm-as` verifies and assembles the IR, `llc` emits the platform
+object, and the C++ driver links it with installed `libvrt`.
 
 Every stage commits only the three process-result goldens. `.ll`, `.bc`,
 object, executable, and final-AST files remain transient artifacts under the
@@ -125,7 +128,7 @@ testsuite/vir/llvm_scalar_ops/llvm_scalar_ops/
 ```
 
 Each leaf directory contains `exit_code.txt`, `stdout.txt`, and `stderr.txt`.
-When `VERONA_ENABLE_LLVM_BACKEND=OFF`, the LLVM collection selects no files
+When `VERONA_ENABLE_LLVM_BACKEND=OFF`, both LLVM collections select no files
 but the other three collections continue to configure.
 
 ### libvrt
@@ -331,7 +334,7 @@ golden set in that case.
 - Missing golden errors mean `ninja update-dump` has not generated the
   declared source result.
 - An LLVM emit validator failure means the `.ll` is missing target metadata,
-  even if `vbcc` returned zero.
+  even if `virc` returned zero.
 - Timeout or signal results are rejected because the executor requires a
   numeric process exit code.
 - Do not use `WILL_FAIL` for an exact nonzero expectation; commit that number
