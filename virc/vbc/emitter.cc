@@ -1,114 +1,17 @@
 #include "emitter.h"
+#include "encoder.h"
+#include "string_table.h"
+#include "type_encoding.h"
 
 #include "../lang.h"
 
-#include <type_traits>
 #include <vbc/format.h>
 #include <zstd.h>
 
 namespace virc
 {
-  using namespace vbc;
-
-  template<typename T>
-  struct sleb
-  {
-    T value;
-    sleb(T value) : value(value) {}
-  };
-
-  template<typename T>
-  struct uleb
-  {
-    T value;
-    uleb(T value) : value(value) {}
-  };
-
-  template<typename T>
-  struct d
-  {
-    DIOp op;
-    T value;
-    d(DIOp op, T value) : op(op), value(value) {}
-  };
-
-  template<typename T>
-  std::vector<uint8_t>& operator<<(std::vector<uint8_t>& b, sleb<T>&& s)
-  {
-    // This uses zigzag encoding.
-    static_assert(std::is_signed_v<T>);
-
-    using U = std::make_unsigned_t<T>;
-    auto bits = static_cast<U>(s.value);
-    auto sign_mask = U{} - static_cast<U>(s.value < 0);
-    auto value = (bits << 1) ^ sign_mask;
-    return b << uleb(value);
-  }
-
-  template<>
-  std::vector<uint8_t>& operator<<(std::vector<uint8_t>& b, sleb<float>&& s)
-  {
-    auto value = std::bit_cast<int32_t>(s.value);
-    return b << sleb(value);
-  }
-
-  template<>
-  std::vector<uint8_t>& operator<<(std::vector<uint8_t>& b, sleb<double>&& s)
-  {
-    auto value = std::bit_cast<int64_t>(s.value);
-    return b << sleb(value);
-  }
-
-  template<typename T>
-  std::vector<uint8_t>& operator<<(std::vector<uint8_t>& b, uleb<T>&& u)
-  {
-    auto value = u.value;
-
-    while (value > 0x7F)
-    {
-      b.push_back((value & 0x7F) | 0x80);
-      value >>= 7;
-    }
-
-    b.push_back(value);
-    return b;
-  }
-
-  template<typename T>
-  std::vector<uint8_t>& operator<<(std::vector<uint8_t>& b, d<T>&& d)
-  {
-    auto value = (d.value << 2) | +d.op;
-    return b << uleb(value);
-  }
-
-  std::vector<uint8_t>&
-  operator<<(std::vector<uint8_t>& b, const std::string& str)
-  {
-    b << uleb(str.size());
-    b.insert(b.end(), str.begin(), str.end());
-    return b;
-  }
-
-  std::vector<uint8_t>&
-  operator<<(std::vector<uint8_t>& b, const std::string_view& str)
-  {
-    b << uleb(str.size());
-    b.insert(b.end(), str.begin(), str.end());
-    return b;
-  }
-
-  uleb<size_t> rgn(Node node)
-  {
-    auto region = node / Region;
-
-    if (region == RegionRC)
-      return +RegionType::RegionRC;
-    else if (region == RegionArena)
-      return +RegionType::RegionArena;
-
-    assert(false);
-    return size_t(-1);
-  }
+  using namespace ::vbc;
+  using namespace vbc_backend;
 
   namespace
   {
@@ -129,9 +32,9 @@ namespace virc
     if (output.empty())
       output = "out.vbc";
 
-    std::vector<uint8_t> hdr;
-    std::vector<uint8_t> di;
-    std::vector<uint8_t> code;
+    ByteBuffer hdr;
+    ByteBuffer di;
+    ByteBuffer code;
     std::map<ST::Index, trieste::Source> di_source;
 
     // Build memo slot mapping: init FunctionId string → 0-based index.
@@ -154,11 +57,7 @@ namespace virc
     hdr << uleb(MagicNumber);
     hdr << uleb(CurrentVersion);
 
-    // Exec string table.
-    hdr << uleb(ST::exec().size());
-
-    for (size_t i = 0; i < ST::exec().size(); i++)
-      hdr << ST::exec().at(i);
+    encode_string_table(hdr, ST::exec());
 
     // Class and complex primitive count.
     hdr << uleb(classes.size());
@@ -533,7 +432,8 @@ namespace virc
           else if (stmt == Region)
           {
             args(stmt / Args);
-            code << uleb(+Op::Region) << dst(stmt) << rgn(stmt) << cls(stmt);
+            code << uleb(+Op::Region) << dst(stmt) << encode_region(stmt)
+                 << cls(stmt);
           }
           else if (stmt == NewArray)
           {
@@ -570,12 +470,13 @@ namespace virc
           }
           else if (stmt == RegionArray)
           {
-            code << uleb(+Op::RegionArray) << dst(stmt) << rgn(stmt)
+            code << uleb(+Op::RegionArray) << dst(stmt) << encode_region(stmt)
                  << rhs(stmt) << uleb(type_id(stmt / Type));
           }
           else if (stmt == RegionArrayConst)
           {
-            code << uleb(+Op::RegionArrayConst) << dst(stmt) << rgn(stmt)
+            code << uleb(+Op::RegionArrayConst) << dst(stmt)
+              << encode_region(stmt)
                  << uleb(type_id(stmt / Type))
                  << uleb(from_chars_sep_v<uint64_t>(stmt / Rhs));
           }
@@ -1019,49 +920,7 @@ namespace virc
       }
     }
 
-    // Types.
-    hdr << uleb(types.size());
-
-    for (auto& type : types)
-    {
-      TypeTag tag;
-
-      switch (type.kind)
-      {
-        case TypeKind::Array:
-          tag = TypeTag::Array;
-          break;
-        case TypeKind::Cown:
-          tag = TypeTag::Cown;
-          break;
-        case TypeKind::Ref:
-          tag = TypeTag::Ref;
-          break;
-        case TypeKind::Union:
-          tag = TypeTag::Union;
-          break;
-        case TypeKind::Tuple:
-          tag = TypeTag::Tuple;
-          break;
-      }
-
-      hdr << uleb(+tag);
-
-      if (
-        type.kind == TypeKind::Array || type.kind == TypeKind::Cown ||
-        type.kind == TypeKind::Ref)
-      {
-        assert(type.elements.size() == 1);
-        hdr << uleb(type.elements.front());
-      }
-      else
-      {
-        hdr << uleb(type.elements.size());
-
-        for (auto element : type.elements)
-          hdr << uleb(element);
-      }
-    }
+    encode_type_table(hdr, types);
 
     // Memo init list.
     if (memo_init_node)
@@ -1083,13 +942,9 @@ namespace virc
 
     if (!strip)
     {
-      std::vector<uint8_t> di_strs;
+      ByteBuffer di_strs;
 
-      // Debug info string table.
-      di_strs << uleb(ST::di().size());
-
-      for (size_t i = 0; i < ST::di().size(); i++)
-        di_strs << ST::di().at(i);
+      encode_string_table(di_strs, ST::di());
 
       // Debug info source files.
       di_strs << uleb(di_source.size());
