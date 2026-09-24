@@ -44,6 +44,8 @@ backend work that is not part of the shared VIRC/VBC migration.
 | `virc/stringtable.{h,cc}` | `virc/model/name_table.{h,cc}` | Interned execution and debug names |
 | Encoded complex type byte vectors | `virc/model/type_table.{h,cc}` | Structured backend-neutral type records |
 | Reserved semantic IDs | `virc/model/ids.h` | Backend-neutral compiler indices |
+| `include/vbci.h` wire declarations | `include/vbc/format.h` | Neutral VBC constants, enums, and instruction contract |
+| `include/vbci.h` live value tags | `vbci/value_type.h` | Interpreter-private value representation categories |
 | `vbcc/llvm/**` | `vbcc/llvm/**` | Legacy optional backend pending its separate migration |
 
 The extraction phases extend this table with symbol-level destinations. Line
@@ -65,6 +67,7 @@ selection and existing golden output stay stable during migration.
 ## Compatibility
 
 - `include/vbcc.h` forwards the former token namespace to `vir`.
+- `include/vbci.h` forwards neutral wire names from `vbc` into `vbci`.
 - The `vbcc` executable and existing CMake target names remain available
   during the transition.
 - Compatibility layers forward to one implementation; they do not duplicate
