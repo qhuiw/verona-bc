@@ -11,8 +11,10 @@ add_library(libvbcc STATIC
   passes/validate_ids.cc
   support/diagnostics.cc
   support/literals.cc
+  vbc/debug_info.cc
   vbc/emitter.cc
   vbc/encoder.cc
+  vbc/instruction_encoder.cc
   vbc/string_table.cc
   vbc/type_encoding.cc
 )
