@@ -21,7 +21,7 @@ int main(int argc, char** argv)
   auto passes = pipeline(state);
   passes.insert(passes.begin(), labels());
   passes.insert(passes.begin(), statements());
-  Reader reader{"vbcc", passes, parser()};
+  Reader reader{"virc", passes, parser()};
 
   struct Options : public trieste::Options
   {
@@ -112,7 +112,7 @@ int main(int argc, char** argv)
   if (!gen_llvm(*state, opts.output_file))
         return -1;
 #else
-      logging::Error() << "vbcc was built without LLVM backend support"
+  logging::Error() << "virc was built without LLVM backend support"
                        << std::endl;
       return -1;
 #endif
