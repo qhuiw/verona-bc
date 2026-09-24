@@ -7,6 +7,7 @@ irreversible-action guardrails (git commit/push/PR require explicit permission).
 
 - Durable Verona guidance belongs in this `AGENTS.md` or `.agents/skills/`, not in agent-specific memory interfaces.
 - Cross-project workflow rules belong in `~/.config/agents/AGENTS.md`.
+- Documentation ownership is defined in `docs/documentation-policy.md`; use the `docs-maintenance` skill for architecture, format, component, and test documentation changes.
 - For tricky compiler/runtime/FFI bugs, do principled analysis first: reproduce, trace, inspect dumps, and localize the fault before changing semantics.
 - Before speculative interpreter/runtime changes, explain the evidence and proposed fix and get feedback.
 
@@ -24,7 +25,7 @@ irreversible-action guardrails (git commit/push/PR require explicit permission).
 - **Ident pass architecture**: Uses `NodeWorker<Resolver>` with a `Processor` class. Key methods: `resolve_first()` (walks up scopes via lookup, builds FQ prefix via `build_fq_prefix()`), `resolve_down()` (looks into ClassDef via lookdown), `resolve_last()` (final type checks), `resolve_alias()` (follows TypeAlias chains), `substitute()` (substitutes TypeParam references using a scope-to-prefix-elem map built from the prefix path), `find_def()` (navigates a fully qualified path from Top).
 - **Self-referential includes**: When resolving a TypeName inside a `Use` node, `lookup()` can return the `Use` node itself via the include mechanism. The ident pass skips these with `n->parent() == def`.
 - **Shared FQ helpers**: `scope_path(node)` walks to Top and returns a top-down vector of scope nodes. `fq_typeparam(path, tp)` builds a fully qualified TypeName for a TypeParam. `fq_typeargs(path, tps)` builds TypeArgs with FQ TypeParam references. `make_selftype(node, fq)` builds a self-type for a class. All in `lang.h`/`lang.cc`, used by ident.cc, sugar.cc, and lang.cc.
-- **Reify pass architecture**: Monomorphization pass. Starts from `main`, reifies the call, then iteratively processes a worklist of classes/functions/type aliases. Output WF is `wfIR` (defined in `include/vbcc.h`, not `vc/lang.h`). Uses `std::deque<Reification>` for pointer stability (worklist holds pointers into deque elements).
+- **Reify pass architecture**: Monomorphization pass. Starts from `main`, reifies the call, then iteratively processes a worklist of classes/functions/type aliases. Output WF is `wfIR` (defined in `include/vir.h`, not `vc/lang.h`). Uses `std::deque<Reification>` for pointer stability (worklist holds pointers into deque elements).
   - **`get_reification()`**: Navigates FQ names from `top`, builds a substitution map from TypeArgs, deduplicates against existing reifications, and schedules new ones. The caller's substitution context is kept separate from the navigation-accumulated substitution — only the latter is stored in the `Reification` for deduplication comparison.
   - **`make_id()`**: Builds identifiers — `ClassId ^ "scope::name::index"`, `FunctionId ^ "scope::name.arity[.ref]::index"`.
   - **Key ANF→IR transformations**: `Var` → extracted to `Vars` as `LocalId`, removed from `Body`. `Lookup` 6-child → 3-child `(dst, src, MethodId)`. `New` `(dst, Type, NewArgs)` → `(dst, ClassId, Args)`. `Call` `(dst, Lhs, FuncName, Args)` → `(dst, FunctionId, Args)`.
@@ -61,19 +62,19 @@ irreversible-action guardrails (git commit/push/PR require explicit permission).
 - **Expression binding precedence**: Juxtaposition (application) rules live in the **dot pass**, not the application pass. This makes `a(index)` (→ `a.apply(index)`) bind tighter than infix operators, so `sum + a(index)` parses as `sum + (a.apply(index))`. The dot pass handles: dot access, TripleColon builtins/FFI, and juxtaposition. The application pass handles: Ref, Hash, infix/prefix function calls, and infix/prefix method calls.
 - **Dot consumes arguments**: `x.f(y)` calls method `f` with arg `y` (dot rule matches first). To call `apply` on the result of a field access, use `(x.f)(y)` (parens force evaluation order) or `x.f.apply(y)` (explicit method call). This is a deliberate design choice — parsing is type-free and unambiguous.
 - **Match expression syntax**: `(match expr { (pattern) -> body; ... }) else (default)`. Patterns can be type tests `(x: T)` or value tests `(expr)`. Value tests use `TryCallDyn` to call `==` — if the method doesn't exist or args don't type-check, the match arm simply fails (nomatch) rather than crashing. Multiple arms are chained as else-if with `nomatch` subtraction at each join point.
-- **TryCallDyn**: A variant of `CallDyn` for fallible dynamic dispatch. At runtime, returns an empty Value if the method doesn't exist (`func == nullptr`) or if argument types don't match (`try_check_args` fails). Used by value match desugaring in sugar.cc. Defined in: `vc/lang.h` (WF), `vc/passes/sugar.cc` (desugaring), `vbcc/passes/typecheck.cc` (type checking), `vbci/thread.cc` (runtime), `vbcc/bytecode.cc` (encoding).
+- **TryCallDyn**: A variant of `CallDyn` for fallible dynamic dispatch. At runtime, returns an empty Value if the method doesn't exist (`func == nullptr`) or if argument types don't match (`try_check_args` fails). Used by value match desugaring in sugar.cc. Defined in: `vc/lang.h` (WF), `vc/passes/sugar.cc` (desugaring), `virc/passes/typecheck.cc` (type checking), `vbci/thread.cc` (runtime), `virc/bytecode.cc` (encoding).
 - **Case value vs parameter ambiguity**: In lambda params, bare identifiers always parse as `ParamDef` (with `TypeVar` type), never as case value `Expr` nodes. To use a variable as a case value, it must be wrapped in an expression that doesn't match `ParamPat` (e.g., a function call, typed literal). This is a deliberate parsing choice — type-free and unambiguous.
 - **Infer pass return type inference**: Post-convergence in `process_function()`, the return type inference must prefer per-label `exit_envs` (which have typetest narrowing from Phase B) over the global `env`. The global env has un-narrowed types (e.g., `x: any` from `$arg: any`), while exit_envs have narrowed types (e.g., `x: i32` after typetest). Getting this wrong produces imprecise return types like `Union(nomatch, any)` → reified as `dyn` → hides all downstream type errors. This matches how Const finalization already prioritizes per-label envs.
 - **Compile-error test conventions**: Tests expecting compile errors belong under `testsuite/v/compile_only/`; they have `exit_code.txt: 1` in the `compile/` golden directory and no `run/` directory. The golden files are auto-generated by `ninja update-dump`.
 - **New op/builtin checklist**: Adding a new bytecode op requires updates in ~15 places. Use this checklist:
-  1. Token definition: `include/vbcc.h` (token def), `include/vbci.h` (Op enum)
+  1. Contract definitions: `include/vir.h` (token), `include/vbc/format.h` (Op enum)
   2. Frontend WFs in `vc/lang.h`: `wfExprDot` (or equivalent early WF), `wfPassDot` (with `<<= Args`), `wfBodyANF`, `wfPassANF` (with `<<= wfDst * wfSrc`)
   3. Frontend passes: `dot.cc` (builtin registration), `anf.cc` (lowering pattern), `infer.cc` (type tracking), `reify.cc` (IR transformation)
-  4. Backend WFs in `include/vbcc.h`: `wfStatement`, `wfIR`
-  5. Backend `Def` pattern in `vbcc/lang.h`: manually maintained list of all statement types that define a register — MUST include the new op if it has a dst LocalId
-  6. Backend `vbcc/passes/liveness.cc`: manually categorized ops for use/def analysis — add to correct category (e.g., `use(Rhs) + def(LocalId)`)
-  7. Backend `vbcc/bytecode.cc`: encoding handler
-  8. Backend `vbcc/passes/typecheck.cc`: type checking if needed
+  4. VIRC WFs in `include/vir.h`: `wfStatement`, `wfIR`
+  5. VIRC `Def` pattern in `virc/lang.h`: manually maintained list of all statement types that define a register — MUST include the new op if it has a dst LocalId
+  6. VIRC `virc/passes/liveness.cc`: manually categorized ops for use/def analysis — add to correct category (e.g., `use(Rhs) + def(LocalId)`)
+  7. VBC emitter `virc/bytecode.cc`: encoding handler
+  8. VIRC `virc/passes/typecheck.cc`: type checking if needed
   9. Interpreter `vbci/thread.cc`: op handler + op name in name array
   Missing any of items 5 or 6 causes "undefined register" errors in later passes, not at the registration site.
 - **New `_builtin` files affect ALL golden files**: Adding a new `.v` file under `vc/_builtin/` changes the compilation output for every test (because `_builtin` is always parsed). This means ALL golden files need regeneration with `ninja update-dump`.

@@ -311,22 +311,22 @@ cmake -S . -B build -G Ninja \
   -DVERONA_ENABLE_LLVM_BACKEND=OFF
 ```
 
-The standalone `vbcc` selects its compiled output format explicitly:
+The standalone `virc` selects its compiled output format explicitly:
 
 | Flag | Description |
 |------|-------------|
 | `--emit <vbc\|llvm-ir>` | Select VBC or textual LLVM IR output; defaults to `vbc` |
 | `--output-file <file>` | Set the compiled output path |
 
-When `--output-file` is omitted, `vbcc` derives the filename from the input and
+When `--output-file` is omitted, `virc` derives the filename from the input and
 uses `.vbc` or `.ll` according to `--emit`. An explicit filename must use the
 matching extension. The existing `-o`/`--output` option remains reserved for
 the final Trieste AST rather than the compiled artifact.
 
-Use the installed `vbcc` and select LLVM IR output:
+Use the installed `virc` and select LLVM IR output:
 
 ```bash
-dist/vbcc/vbcc build \
+dist/virc/virc build \
   ../testsuite/vir/simp1/simp1.vir \
   --emit llvm-ir \
   --output-file simp1.ll
@@ -336,6 +336,9 @@ c++ simp1.o dist/lib/libvrt.a -o simp1
 ./simp1
 echo $? # 0
 ```
+
+The installed `dist/vbcc/vbcc` command remains as a migration alias for
+`virc`.
 
 `libvrt.a` supplies the native entry point and the process-local
 `set_exit_code(i32)` FFI function used by this first backend slice.
