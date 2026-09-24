@@ -1,6 +1,6 @@
-#include "bytecode.h"
 #include "lang.h"
 #include "reader/reader.h"
+#include "vbc/emitter.h"
 
 #include <trieste/driver.h>
 

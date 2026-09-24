@@ -8,8 +8,8 @@ add_library(libvbcc STATIC
   passes/validate_ids.cc
   support/diagnostics.cc
   support/literals.cc
-  bytecode.cc
   stringtable.cc
+  vbc/emitter.cc
 )
 
 target_include_directories(libvbcc INTERFACE
