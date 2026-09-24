@@ -1,12 +1,13 @@
 #pragma once
 
 #include "sequent.h"
-#include "vir.h"
+
+#include <vir.h>
 
 namespace virc
 {
-  using namespace vir;
   using namespace trieste;
+  using namespace vir;
 
   inline Node IRResolveAlias(const SequentCtx& ctx, const Node& t)
   {
