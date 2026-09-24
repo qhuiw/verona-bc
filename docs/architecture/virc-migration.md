@@ -30,6 +30,10 @@ backend work that is not part of the shared VIRC/VBC migration.
 | `virc/bitset.{h,cc}` | `virc/analysis/bitset.{h,cc}` | Reusable liveness bitset |
 | `virc/irsubtype.h` | `virc/analysis/ir_subtype.h` | VIR subtype analysis |
 | `virc/sequent.h` | `virc/analysis/sequent.h` | Generic sequent-calculus framework |
+| `virc/lang.cc` diagnostics | `virc/support/diagnostics.{h,cc}` | Shared error construction and source locations |
+| `virc/lang.{h,cc}` literals | `virc/support/literals.{h,cc}` | Literal conversion, escaping, and parser helpers |
+| `virc/from_chars.h` | `virc/support/literals.h` | Portable literal number parsing |
+| `virc/lang.h` statement patterns | `virc/passes/patterns.h` | Shared patterns consumed by compiler passes |
 | `vbcc/llvm/**` | `vbcc/llvm/**` | Legacy optional backend pending its separate migration |
 
 The extraction phases extend this table with symbol-level destinations. Line
