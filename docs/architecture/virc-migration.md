@@ -49,6 +49,8 @@ backend work that is not part of the shared VIRC/VBC migration.
 | `virc/vbc/emitter.cc` byte helpers | `virc/vbc/encoder.{h,cc}` | LEB128, floating-point, debug-op, and string encoding |
 | Inline emitter string-table loops | `virc/vbc/string_table.{h,cc}` | Execution and debug string-table serialization |
 | Inline emitter type encoding | `virc/vbc/type_encoding.{h,cc}` | Region operands and structured type-table serialization |
+| Inline emitter instruction chain | `virc/vbc/instruction_encoder.{h,cc}` | VIR statement and terminator lowering to VBC operations |
+| Inline emitter debug state | `virc/vbc/debug_info.{h,cc}` | Source mapping, debug operations, and compressed debug payloads |
 | `vbcc/llvm/**` | `vbcc/llvm/**` | Legacy optional backend pending its separate migration |
 
 The extraction phases extend this table with symbol-level destinations. Line
