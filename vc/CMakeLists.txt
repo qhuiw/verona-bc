@@ -30,6 +30,11 @@ target_link_libraries(vc
   deps::libgit2
 )
 
+if(VERONA_ENABLE_LLVM_BACKEND)
+  target_compile_definitions(vc PRIVATE VERONA_ENABLE_LLVM_BACKEND=1)
+  target_link_libraries(vc virc_llvm)
+endif()
+
 # Copy the stdlib to the install directory
 install(DIRECTORY _builtin DESTINATION vc)
 
