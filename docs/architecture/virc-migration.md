@@ -38,6 +38,7 @@ backend work that is not part of the shared VIRC/VBC migration.
 | `virc/passes/statements.cc` | `virc/reader/statements.cc` | Textual statement construction |
 | `virc/passes/labels.cc` | `virc/reader/labels.cc` | Textual body-to-label grouping |
 | `virc/lang.h` reader declarations | `virc/reader/reader.h` | Textual reader API |
+| `virc/bytecode.{h,cc}` | `virc/vbc/emitter.{h,cc}` | Primary descendant of the VBC serialization monolith |
 | `vbcc/llvm/**` | `vbcc/llvm/**` | Legacy optional backend pending its separate migration |
 
 The extraction phases extend this table with symbol-level destinations. Line

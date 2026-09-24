@@ -1,9 +1,9 @@
 #pragma once
 
-#include "bytecode.h"
 #include "passes/patterns.h"
 #include "support/diagnostics.h"
 #include "support/literals.h"
+#include "vbc/emitter.h"
 
 namespace virc
 {

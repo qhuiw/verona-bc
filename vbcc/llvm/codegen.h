@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../../virc/bytecode.h"
+#include "../../virc/vbc/emitter.h"
 #include "../../virc/lang.h"
 #include "model/blocks.h"
 #include "model/dispatch.h"
