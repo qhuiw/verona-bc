@@ -1,0 +1,66 @@
+# VBCI to VRT Migration Policy
+
+VBCI currently implements interpreter-specific execution and memory management
+while VRT is becoming the runtime used by native code. The long-term direction
+is to share complete runtime semantics where doing so preserves both execution
+models.
+
+## Migration Invariant
+
+Move one complete semantic subsystem at a time.
+
+A subsystem is ready to move only when:
+
+1. its public VRT contract expresses all semantics required by native code and
+   VBCI;
+2. ownership, lifetime, failure, and concurrency behavior are documented;
+3. VRT tests cover the contract independently of VBCI;
+4. VBCI integration tests cover the adapter or direct call boundary;
+5. VBCI's replaced implementation and duplicate state can be removed in the
+   same change or in a bounded compatibility step.
+
+Until those conditions hold, VBCI retains its local implementation.
+
+## Representation Boundary
+
+Shared semantics do not require identical register representations.
+
+VBCI's live `Value` is a boxed tagged union that includes interpreter-only
+states such as register, field, array, cown, function, error, and invalid
+values. VRT's `Value` is currently a non-owning view over a type and data
+address. Neither is a replacement for the other.
+
+The VBC format records encoded primitive and layout information. Those wire
+identifiers belong to the neutral VBC contract, not to either live value type.
+Adapters, when required, must be scoped to a concrete migrated subsystem and
+must name the ownership conversion they perform.
+
+## Dependency Rules
+
+- VBCI may depend on public VRT interfaces for migrated subsystems.
+- VRT must not depend on VBCI implementation headers.
+- VBC wire definitions must not depend on either runtime's live value type.
+- Do not add a general `vbci/vrt_adapter` module. Broad adapters obscure which
+  side owns lifetime, errors, and synchronization.
+- LLVM code generation targets the public VRT ABI; files under the LLVM
+  backend named `vrt` emit ABI calls and do not implement VRT.
+
+## Candidate Subsystems
+
+Examples include type-layout lookup, object/array operations, regions,
+freezing, cowns, scheduling, and failure reporting. This list is not a migration
+order. Each subsystem needs a separate readiness review using the invariant
+above.
+
+## Validation
+
+Every migration must preserve:
+
+- VBCI golden tests for interpreted execution;
+- standalone VRT API and internal tests;
+- LLVM-native fixtures that exercise the migrated ABI;
+- builds with the LLVM backend both enabled and disabled when dependencies
+  change.
+
+Update this policy as VRT contracts mature. Use an ADR for a change to the
+subsystem-at-a-time strategy or the representation boundary.

@@ -12,5 +12,5 @@ strings separately.
 
 The model does not contain LLVM objects, VBCI values, or VRT implementation
 types. VBC encoding of this state is described under the
-[VBC emitter](../vbc/README.md); other emitters own their representation
-choices at their output boundaries.
+[VBC emitter](../vbc/README.md); LLVM representation choices are local to the
+[LLVM emitter](../llvm/README.md).

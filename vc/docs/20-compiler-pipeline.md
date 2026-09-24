@@ -17,7 +17,7 @@ The `vc` compiler is a multi-pass term rewriting compiler built on the [Trieste]
 The compiler runs passes in two stages. The first 10 passes are the `vc`
 frontend, which transforms source code into monomorphized VIR. The remaining
 passes are provided by VIRC, which creates output-neutral `Compilation` state
-for backend emitters.
+for either the VBC or LLVM emitter.
 
 ### Frontend Passes (vc)
 
@@ -45,8 +45,9 @@ for backend emitters.
 | 14 | `optimize` | once | Shared VIR optimization |
 | 15 | `liveness` | once | Liveness analysis and explicit drops |
 
-After all passes complete, VC's VBC emitter produces a `.vbc` file. In
-practice, `vc build` invokes both stages; the user does not run VIRC separately.
+After all passes complete, the selected peer emitter produces VBC or LLVM IR.
+In practice, `vc build` invokes both stages; the user does not run VIRC
+separately.
 
 ---
 

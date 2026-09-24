@@ -8,6 +8,10 @@ Verona Bytecode (VBC) or LLVM IR.
 **Current:** VBC is the default output and runs on VBCI. LLVM IR emission is
 available when `VERONA_ENABLE_LLVM_BACKEND=ON` and targets VRT.
 
+**Migration:** VRT does not yet replace VBCI for every runtime subsystem. The
+[runtime migration policy](docs/architecture/vbci-vrt-migration.md) records
+the boundary and sequencing rules.
+
 ## Quick Start
 
 Configure and build in the `build` directory, then run the test suite:
@@ -27,8 +31,8 @@ dist/vbci/vbci hello.vbc
 ```
 
 Set `-DVERONA_ENABLE_LLVM_BACKEND=OFF` while configuring when LLVM is not
-available. See [Toolchain Usage](vc/docs/21-toolchain-usage.md) for standalone
-VIRC commands.
+available. See [Toolchain Usage](vc/docs/21-toolchain-usage.md) for output
+selection and standalone VIRC commands.
 
 ## Components
 
@@ -37,6 +41,7 @@ VIRC commands.
 | [VC](vc/README.md) | Verona frontend and source-to-VIR lowering |
 | [VIRC](virc/README.md) | Shared VIR validation, analysis, and output-neutral compilation state |
 | [VBCI](vbci/README.md) | VBC loader and interpreter runtime |
+| [VRT](vrt/README.md) | Native runtime and public C ABI used by LLVM output |
 | [Interchange formats](docs/formats/README.md) | VIR and VBC contracts and compatibility |
 | [Testsuite](testsuite/README.md) | Source, VIR, VBC, LLVM, and runtime test pipelines |
 

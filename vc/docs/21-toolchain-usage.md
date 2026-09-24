@@ -20,6 +20,8 @@ Compiles all `.v` files in `<source_dir>` and produces `<dir_name>.vbc` in the c
 
 | Flag | Description |
 |------|-------------|
+| `--emit <vbc\|llvm-ir>` | Select VBC or textual LLVM IR output; defaults to `vbc` |
+| `--output-file <file>` | Set the selected output path |
 | `-b <file>`, `--bytecode <file>` | Set the output bytecode filename |
 | `-s`, `--strip` | Strip debug information from the bytecode |
 | `-p <pass>`, `--pass <pass>` | Stop compilation after a specific pass |
@@ -34,6 +36,9 @@ vc build my_project/                  # produces my_project.vbc
 
 # Custom output
 vc build my_project/ -b output.vbc
+
+# Emit LLVM IR when LLVM support is enabled
+vc build my_project/ --emit llvm-ir --output-file output.ll
 
 # Strip debug info
 vc build my_project/ -s
@@ -51,7 +56,9 @@ The output filename is derived from the source directory name:
 - `vc build hello/` → `hello.vbc`
 - `vc build my_project/` → `my_project.vbc`
 
-Use `-b` to override.
+Use `--output-file` to override either output. `-b` is the VBC-only
+compatibility spelling and cannot be combined with `--output-file` or
+`--emit llvm-ir`.
 
 ### Important: Use the Installed Binary
 
@@ -311,7 +318,8 @@ cmake -S . -B build -G Ninja \
   -DVERONA_ENABLE_LLVM_BACKEND=OFF
 ```
 
-The standalone `virc` selects its compiled output format explicitly:
+Both `vc` and the standalone `virc` select their compiled output format
+explicitly:
 
 | Flag | Description |
 |------|-------------|
