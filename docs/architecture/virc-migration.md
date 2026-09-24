@@ -27,6 +27,9 @@ backend work that is not part of the shared VIRC/VBC migration.
 | `include/vbcc.h` | `include/vir.h` | Public VIR tokens and well-formedness contracts |
 | `vbcc/*.h`, `vbcc/*.cc` | `virc/*.h`, `virc/*.cc` | Shared compiler implementation |
 | `vbcc/passes/**` | `virc/passes/**` | VIR validation, analysis, and optimization passes |
+| `virc/bitset.{h,cc}` | `virc/analysis/bitset.{h,cc}` | Reusable liveness bitset |
+| `virc/irsubtype.h` | `virc/analysis/ir_subtype.h` | VIR subtype analysis |
+| `virc/sequent.h` | `virc/analysis/sequent.h` | Generic sequent-calculus framework |
 | `vbcc/llvm/**` | `vbcc/llvm/**` | Legacy optional backend pending its separate migration |
 
 The extraction phases extend this table with symbol-level destinations. Line

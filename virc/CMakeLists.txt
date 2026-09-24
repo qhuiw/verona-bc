@@ -1,11 +1,11 @@
 add_library(libvbcc STATIC
+  analysis/bitset.cc
   passes/assign_ids.cc
   passes/liveness.cc
   passes/memo.cc
   passes/optimize.cc
   passes/typecheck.cc
   passes/validate_ids.cc
-  bitset.cc
   bytecode.cc
   lang.cc
   stringtable.cc
