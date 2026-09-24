@@ -12,6 +12,9 @@ add_library(libvbcc STATIC
   support/diagnostics.cc
   support/literals.cc
   vbc/emitter.cc
+  vbc/encoder.cc
+  vbc/string_table.cc
+  vbc/type_encoding.cc
 )
 
 target_include_directories(libvbcc INTERFACE

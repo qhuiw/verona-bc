@@ -46,6 +46,9 @@ backend work that is not part of the shared VIRC/VBC migration.
 | Reserved semantic IDs | `virc/model/ids.h` | Backend-neutral compiler indices |
 | `include/vbci.h` wire declarations | `include/vbc/format.h` | Neutral VBC constants, enums, and instruction contract |
 | `include/vbci.h` live value tags | `vbci/value_type.h` | Interpreter-private value representation categories |
+| `virc/vbc/emitter.cc` byte helpers | `virc/vbc/encoder.{h,cc}` | LEB128, floating-point, debug-op, and string encoding |
+| Inline emitter string-table loops | `virc/vbc/string_table.{h,cc}` | Execution and debug string-table serialization |
+| Inline emitter type encoding | `virc/vbc/type_encoding.{h,cc}` | Region operands and structured type-table serialization |
 | `vbcc/llvm/**` | `vbcc/llvm/**` | Legacy optional backend pending its separate migration |
 
 The extraction phases extend this table with symbol-level destinations. Line
