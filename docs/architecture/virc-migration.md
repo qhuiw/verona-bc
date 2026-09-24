@@ -16,8 +16,8 @@ backend work that is not part of the shared VIRC/VBC migration.
 | --- | --- | --- |
 | Mechanical source move | Complete | Shared sources retain one-to-one history under `virc/`. |
 | Concept rename | Complete | `vir` owns VIR tokens and `virc` owns compiler code. |
-| Responsibility extraction | Pending | Analysis, support, reader, model, and VBC encoding gain dedicated homes. |
-| Build target split | Pending | Core, reader, and VBC emitter targets become independently consumable. |
+| Responsibility extraction | Complete | Analysis, support, reader, model, and VBC encoding have dedicated homes. |
+| Build target split | Complete | Core, reader, and VBC emitter targets are independently consumable. |
 | Compatibility removal | Pending | Legacy names remain until downstream users migrate. |
 
 ## Current Source Map
@@ -53,6 +53,8 @@ backend work that is not part of the shared VIRC/VBC migration.
 | Inline emitter debug state | `virc/vbc/debug_info.{h,cc}` | Source mapping, debug operations, and compressed debug payloads |
 | Duplicated frontend pass lists | `virc/compile.{h,cc}` | Shared VIRC pipeline and compile result API |
 | `virc::vbc_backend::emit` callers | `virc::vbc::emit` | Public VBC emission API over read-only compilation state |
+| Monolithic `libvbcc` target | `virc_core`, `virc_reader`, `virc_vbc` | Compiler, textual reader, and VBC emitter libraries |
+| `vbcc` executable only | `virc` plus `vbcc` compatibility command | Primary and migration CLI entry points |
 | `vbcc/llvm/**` | `vbcc/llvm/**` | Legacy optional backend pending its separate migration |
 
 The extraction phases extend this table with symbol-level destinations. Line

@@ -15,14 +15,15 @@ add_executable(vc
 )
 
 if(MSVC)
-  target_compile_options(vbcc PRIVATE /W4 /WX /wd5030 /bigobj)
+  target_compile_options(vc PRIVATE /W4 /WX /wd5030 /bigobj)
 else()
-  target_compile_options(vbcc PRIVATE
+  target_compile_options(vc PRIVATE
     -Wall -Wextra -Werror -Wno-zero-length-array)
 endif()
 
 target_link_libraries(vc
-  vbc::vbcc
+  virc_core
+  virc_vbc
   OpenSSL::Crypto
   OpenSSL::SSL
   CLI11::CLI11

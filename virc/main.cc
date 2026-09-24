@@ -14,7 +14,7 @@ int main(int argc, char** argv)
   auto passes = pipeline(state);
   passes.insert(passes.begin(), labels());
   passes.insert(passes.begin(), statements());
-  Reader reader{"vbcc", passes, parser()};
+  Reader reader{"virc", passes, parser()};
 
   struct Options : public trieste::Options
   {
