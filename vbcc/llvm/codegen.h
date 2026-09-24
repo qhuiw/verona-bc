@@ -15,11 +15,14 @@
 #include <optional>
 #include <string>
 #include <unordered_map>
-#include <vbci.h>
+#include <vbc/format.h>
 #include <vector>
 
 namespace vbcc
 {
+  using namespace vbc;
+  using namespace virc;
+
   namespace llvm_backend
   {
     class LLVMCodegen

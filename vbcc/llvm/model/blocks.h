@@ -13,6 +13,8 @@ namespace llvm
 
 namespace vbcc
 {
+  using namespace virc;
+
   namespace llvm_backend
   {
     class LLVMCodegen;
