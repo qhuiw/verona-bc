@@ -41,10 +41,7 @@ add_library(libvbcc ALIAS virc_core)
 add_library(vbc::vbcc ALIAS virc_core)
 
 if(VERONA_ENABLE_LLVM_BACKEND)
-  add_subdirectory(
-    ${CMAKE_CURRENT_SOURCE_DIR}/../vbcc/llvm
-    ${CMAKE_CURRENT_BINARY_DIR}/llvm
-  )
+  add_subdirectory(llvm)
 endif()
 
 # Preserve the former command name during migration. Both executables use the
