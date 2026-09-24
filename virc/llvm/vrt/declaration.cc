@@ -2,7 +2,7 @@
 
 #include <llvm/IR/Function.h>
 
-namespace vbcc
+namespace virc
 {
   namespace llvm_backend
   {

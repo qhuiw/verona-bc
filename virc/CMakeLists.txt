@@ -65,7 +65,7 @@ foreach(tool IN ITEMS virc vbcc)
 
   if(VERONA_ENABLE_LLVM_BACKEND)
     target_compile_definitions(${tool} PRIVATE VERONA_ENABLE_LLVM_BACKEND=1)
-    target_link_libraries(${tool} vbc::vbcllvm)
+    target_link_libraries(${tool} virc_llvm)
   endif()
 endforeach()
 

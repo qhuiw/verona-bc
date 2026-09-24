@@ -2,7 +2,7 @@
 
 #include <cassert>
 
-namespace vbcc
+namespace virc
 {
   namespace llvm_backend
   {

@@ -3,7 +3,7 @@
 #include <llvm/IR/Constants.h>
 #include <numbers>
 
-namespace vbcc
+namespace virc
 {
   namespace llvm_backend
   {

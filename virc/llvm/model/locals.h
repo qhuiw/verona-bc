@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../../../virc/lang.h"
+#include "../../lang.h"
 #include "representation.h"
 
 #include <optional>
@@ -12,10 +12,8 @@ namespace llvm
   class Value;
 }
 
-namespace vbcc
+namespace virc
 {
-  using namespace virc;
-
   namespace llvm_backend
   {
     class LLVMCodegen;

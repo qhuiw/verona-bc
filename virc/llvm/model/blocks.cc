@@ -5,7 +5,7 @@
 #include <cassert>
 #include <llvm/IR/BasicBlock.h>
 
-namespace vbcc
+namespace virc
 {
   namespace llvm_backend
   {

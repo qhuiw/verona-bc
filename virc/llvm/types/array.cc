@@ -3,7 +3,7 @@
 #include <cassert>
 #include <llvm/IR/DerivedTypes.h>
 
-namespace vbcc
+namespace virc
 {
   namespace llvm_backend
   {

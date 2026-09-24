@@ -8,7 +8,7 @@
 #include <llvm/IR/Instructions.h>
 #include <set>
 
-namespace vbcc
+namespace virc
 {
   namespace llvm_backend
   {

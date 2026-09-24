@@ -5,7 +5,7 @@
 #include <llvm/IR/DerivedTypes.h>
 #include <llvm/IR/GlobalVariable.h>
 
-namespace vbcc
+namespace virc
 {
   namespace llvm_backend
   {

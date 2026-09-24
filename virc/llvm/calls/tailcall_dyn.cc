@@ -5,7 +5,7 @@
 #include <llvm/IR/Instructions.h>
 #include <vector>
 
-namespace vbcc
+namespace virc
 {
   namespace llvm_backend
   {

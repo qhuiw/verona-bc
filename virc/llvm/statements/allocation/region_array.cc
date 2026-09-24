@@ -4,7 +4,7 @@
 #include <llvm/IR/Constants.h>
 #include <vrt/region.h>
 
-namespace vbcc
+namespace virc
 {
   namespace llvm_backend
   {

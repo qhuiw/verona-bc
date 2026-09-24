@@ -4,7 +4,7 @@
 
 #include <llvm/IR/Value.h>
 
-namespace vbcc
+namespace virc
 {
   namespace llvm_backend
   {

@@ -13,7 +13,7 @@ namespace llvm
   class Value;
 }
 
-namespace vbcc
+namespace virc
 {
   namespace llvm_backend
   {

@@ -4,7 +4,7 @@
 #include <optional>
 #include <vector>
 
-namespace vbcc
+namespace virc
 {
   namespace llvm_backend
   {

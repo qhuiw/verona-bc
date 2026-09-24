@@ -35,4 +35,10 @@ namespace virc
       const std::filesystem::path& output,
       bool strip = false);
   }
+
+  namespace llvm
+  {
+    bool emit(
+      const Compilation& compilation, const std::filesystem::path& output);
+  }
 }

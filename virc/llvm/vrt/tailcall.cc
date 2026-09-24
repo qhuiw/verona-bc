@@ -1,6 +1,6 @@
 #include "../codegen.h"
 
-namespace vbcc
+namespace virc
 {
   namespace llvm_backend
   {

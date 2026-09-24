@@ -3,6 +3,10 @@
 #include "reader/reader.h"
 #include "vbc/emitter.h"
 
+#if defined(VERONA_ENABLE_LLVM_BACKEND)
+#  include "llvm/emit.h"
+#endif
+
 #include <string>
 #include <trieste/driver.h>
 
@@ -109,10 +113,10 @@ int main(int argc, char** argv)
 
     case OutputFormat::LLVMIR:
 #if defined(VERONA_ENABLE_LLVM_BACKEND)
-  if (!gen_llvm(*state, opts.output_file))
+      if (!llvm::emit(*state, opts.output_file))
         return -1;
 #else
-  logging::Error() << "virc was built without LLVM backend support"
+      logging::Error() << "virc was built without LLVM backend support"
                        << std::endl;
       return -1;
 #endif

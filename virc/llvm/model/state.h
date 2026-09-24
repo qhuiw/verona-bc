@@ -15,7 +15,7 @@ namespace llvm
   class StructType;
 }
 
-namespace vbcc
+namespace virc
 {
   namespace llvm_backend
   {

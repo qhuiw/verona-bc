@@ -17,17 +17,3 @@ namespace virc::vbc
     const std::filesystem::path& output,
     bool strip);
 }
-
-namespace virc
-{
-  using Bytecode = Compilation;
-
-  // Temporary adapter for the legacy optional backend.
-  bool gen_llvm(
-    const Compilation& compilation, const std::filesystem::path& output);
-}
-
-namespace vbcc
-{
-  using namespace virc;
-}

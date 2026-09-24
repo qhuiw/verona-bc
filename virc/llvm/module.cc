@@ -13,7 +13,7 @@
 #include <optional>
 #include <system_error>
 
-namespace vbcc
+namespace virc
 {
   namespace llvm_backend
   {

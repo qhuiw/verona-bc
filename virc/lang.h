@@ -7,9 +7,6 @@
 
 namespace virc
 {
-  using namespace vir;
-  using namespace trieste;
-
   PassDef memo();
   PassDef assign_ids(std::shared_ptr<Compilation> state);
   PassDef validate_ids(std::shared_ptr<Compilation> state);

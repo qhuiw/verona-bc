@@ -8,7 +8,7 @@
 #include <llvm/IR/GlobalVariable.h>
 #include <map>
 
-namespace vbcc
+namespace virc
 {
   namespace llvm_backend
   {
@@ -139,7 +139,7 @@ namespace vbcc
         }
       }
 
-      const auto complex_base = state.classes.size() + NumPrimitiveClasses;
+      const auto complex_base = state.classes.size() + PrimitiveTypeCount;
       for (std::size_t index = 0; index < state.complex_primitives.size();
            ++index)
       {

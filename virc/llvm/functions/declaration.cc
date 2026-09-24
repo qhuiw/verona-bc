@@ -3,7 +3,7 @@
 #include <llvm/IR/Function.h>
 #include <utility>
 
-namespace vbcc
+namespace virc
 {
   namespace llvm_backend
   {

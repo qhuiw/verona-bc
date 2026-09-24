@@ -1,6 +1,6 @@
 llvm_map_components_to_libnames(VERONA_LLVM_LIBS Core Support native)
 
-add_library(libvbcllvm STATIC
+add_library(virc_llvm STATIC
   classes.cc
   codegen.cc
   # Shared call lowering.
@@ -84,19 +84,22 @@ add_library(libvbcllvm STATIC
   utilities.cc
 )
 
-target_include_directories(libvbcllvm SYSTEM PRIVATE
+target_include_directories(virc_llvm SYSTEM PRIVATE
   ${LLVM_INCLUDE_DIRS}
 )
 
 separate_arguments(
   VERONA_LLVM_DEFINITIONS NATIVE_COMMAND "${LLVM_DEFINITIONS}")
-target_compile_options(libvbcllvm PRIVATE
+target_compile_options(virc_llvm PRIVATE
   ${VERONA_LLVM_DEFINITIONS}
 )
 
-target_link_libraries(libvbcllvm PUBLIC
-  vbc::vbcc
+target_link_libraries(virc_llvm PUBLIC
+  virc_core
   ${VERONA_LLVM_LIBS}
 )
 
-add_library(vbc::vbcllvm ALIAS libvbcllvm)
+add_library(libvbcllvm ALIAS virc_llvm)
+add_library(vbc::vbcllvm ALIAS virc_llvm)
+
+install(TARGETS virc_llvm ARCHIVE DESTINATION lib/virc)

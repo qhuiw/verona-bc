@@ -1,7 +1,6 @@
 #pragma once
 
-#include "../../virc/vbc/emitter.h"
-#include "../../virc/lang.h"
+#include "../lang.h"
 #include "model/blocks.h"
 #include "model/dispatch.h"
 #include "model/locals.h"
@@ -15,14 +14,10 @@
 #include <optional>
 #include <string>
 #include <unordered_map>
-#include <vbc/format.h>
 #include <vector>
 
-namespace vbcc
+namespace virc
 {
-  using namespace ::vbc;
-  using namespace virc;
-
   namespace llvm_backend
   {
     class LLVMCodegen
@@ -32,7 +27,7 @@ namespace vbcc
 
     private:
       /* working state */
-      const Bytecode& state;
+      const Compilation& state;
       llvm::LLVMContext context;
       llvm::Module module;
       llvm::IRBuilder<> builder;
@@ -49,7 +44,7 @@ namespace vbcc
       bool failed = false;
 
     public:
-      LLVMCodegen(const Bytecode& state);
+      LLVMCodegen(const Compilation& state);
 
       bool emit(const std::filesystem::path& output);
 
@@ -183,5 +178,8 @@ namespace vbcc
       llvm::Value*
       unpack_raised_value(const LoweredType& type, llvm::Value* value);
     };
+
+    bool emit(
+      const Compilation& compilation, const std::filesystem::path& output);
   }
 }

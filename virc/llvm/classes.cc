@@ -11,7 +11,7 @@
 #include <llvm/Support/Alignment.h>
 #include <utility>
 
-namespace vbcc
+namespace virc
 {
   namespace llvm_backend
   {
@@ -29,7 +29,7 @@ namespace vbcc
                .emplace(
                  name,
                  ClassState{
-                   NumPrimitiveClasses + index, fields_type, {}, nullptr})
+                   PrimitiveTypeCount + index, fields_type, {}, nullptr})
                .second)
         {
           fail(class_id, "duplicate LLVM class '" + name + "'");
@@ -255,7 +255,7 @@ namespace vbcc
               method_metadata_type,
               {word(method_id->second), function->second.descriptor}));
 
-          if (method_id->second == virc::FinalizerMethodId)
+          if (method_id->second == FinalizerMethodId)
           {
             auto& finalizer = function->second;
             if (

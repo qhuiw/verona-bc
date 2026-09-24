@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../../../virc/lang.h"
+#include "../../lang.h"
 
 #include <string>
 #include <unordered_map>
@@ -11,10 +11,8 @@ namespace llvm
   class Function;
 }
 
-namespace vbcc
+namespace virc
 {
-  using namespace virc;
-
   namespace llvm_backend
   {
     class LLVMCodegen;

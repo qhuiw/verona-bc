@@ -10,7 +10,7 @@ namespace llvm
   class GlobalVariable;
 }
 
-namespace vbcc
+namespace virc
 {
   namespace llvm_backend
   {
