@@ -258,13 +258,12 @@ namespace virc
               if (!target)
                 continue;
 
-              // Don't inline functions that capture a raise target into an
-              // ordinary caller. Inlining would move block-lambda creation
-              // and change the captured frame. The synthetic @main wrapper is
-              // safe because it immediately delegates to main and returns.
-              if (
-                captures_raise_target(target) &&
-                (func_node / FunctionId)->location().view() != "@main")
+              // Don't inline functions that capture a raise target. Inlining
+              // would move block-lambda creation into the caller's frame,
+              // changing which frame the lambda captures as its raise target.
+              // This applies to @main as well: earlier iterations may already
+              // have inlined main's body into the synthetic wrapper.
+              if (captures_raise_target(target))
                 continue;
 
               // Don't inline self-recursive calls.
